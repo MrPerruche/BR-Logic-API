@@ -124,11 +124,14 @@ def _get_prop_bin(prop_type: str, id_: int,
                 converted = b'\x01' if ite_val else b'\x00'
 
             elif prop_type == 'brick_id':
-                try:
-                    converted = unsigned_int(1, 2)
-                    converted += unsigned_int(brick_id_table[ite_val]+1, 2)
-                except IndexError:
-                    raise IndexError(f"Brick {ite_val!r} is missing from the brick id table: it does not exist.")
+                if ite_val is None:
+                    converted = b'\x00'
+                else:
+                    try:
+                        converted = unsigned_int(1, 2)
+                        converted += unsigned_int(brick_id_table[ite_val]+1, 2)
+                    except IndexError:
+                        raise IndexError(f"Brick {ite_val!r} is missing from the brick id table: it does not exist.")
 
             elif prop_type == 'float':
                 converted = sp_float(ite_val)
@@ -326,7 +329,7 @@ def utf8(string: str) -> bytes:
     :return: Bytes
     """
 
-    return string.encode('utf-8')
+    return string.encode('ascii')
 
 
 def utf16(string: str) -> bytes:

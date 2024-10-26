@@ -5,6 +5,7 @@ from .brick import *
 from .utils import *
 from .write_utils import *
 from .write_utils import _convert_brick_names_to_id, _convert_brick_types, _get_property_data, _get_prop_bin
+from datetime import datetime
 # import os.path -> from .utils
 # from typing import Self -> from .brick
 # from typing import Final -> from .utils
@@ -22,7 +23,7 @@ class Creation14:
     def __init__(self, project_name: str, project_dir: str,
                  name: str = '', description: str = '', appendix: bytes | bytearray = bytearray(), tags: list[str] | None = None,
                  visibility: int = VISIBILITY_PUBLIC, seat: Optional[str | int] = None, creation_time: Optional[int] = None,
-                 update_time: Optional[int] = None) -> None:
+                 update_time: Optional[int] = None, size: Optional[list[float]] = None, weight: float = 0.0, price: float = 0.0) -> None:
 
         """
         Project creation class for version 14 (Brick Rigs 1.7.0+).
@@ -49,6 +50,9 @@ class Creation14:
         self.tags: list[str] = tags
         self.creation_time: Optional[int] = creation_time
         self.update_time: Optional[int] = update_time
+        self.size: list[float] = [0.0, 0.0, 0.0] if size is None else size
+        self.price: float = price
+        self.weight: float = weight
 
         # File
         self.seat: Optional[str | int] = seat
@@ -239,6 +243,16 @@ class Creation14:
                           (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
 
 
+        if not exist_ok and os.path.exists(os.path.join(self.project_dir, self.project_name, file_name)):
+
+            FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
+                                     f"A such named file cannot be created.")
+
+            if settings['attempt_error_mitigation']:
+                FM.success("Cancelling creation file creation")
+            else:
+                raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
+
         # #################### TREATMENT ####################
 
         # Bricks
@@ -357,9 +371,93 @@ class Creation14:
         return self
 
 
+    def write_metadata(self, file_name: str = 'MetaData.brm', exist_ok: bool = True) -> Self:
 
-            
+        """
+        Will write the metadata file. TODO
 
+        :return:
+        """
+
+        # ################### VERIFYING PATHS ####################
+
+
+        if not is_valid_folder_name(os.path.join(self.project_dir, self.project_name, file_name), os.name == 'nt'):
+
+            # This error cannot be mitigated
+            FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
+                                     f"A such named folder cannot be created.")
+
+            raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}" +
+                          (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+
+        if not exist_ok and os.path.exists(os.path.join(self.project_dir, self.project_name, file_name)):
+
+            FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
+                                     f"A such named file cannot be created.")
+
+            if settings['attempt_error_mitigation']:
+                FM.success("Cancelling metadata file creation")
+            else:
+                raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
+
+        # #################### WRITING ####################
+
+        # Initializing stuff
+        buffer: bytearray = bytearray()
+
+        # Version number
+        buffer.extend(unsigned_int(self.get_version(), 1))
+
+        # File name
+        buffer.extend(unsigned_int(-len(self.name), 2))
+        buffer.extend(utf16(self.name)[2:])
+
+        # Description:
+        buffer.extend(unsigned_int(-len(self.description), 2))
+        buffer.extend(utf16(self.description)[2:])
+
+        # Brick Count
+        buffer.extend(unsigned_int(len(self.bricks), 2))
+
+        # Vehicle Size
+        for axis_size in self.size:
+            buffer.extend(sp_float(axis_size))
+
+        # Author TODO
+        buffer.extend(unsigned_int(16, 1))
+        buffer.extend(b'\x00' * 8)
+
+        # Write time (100 nanosecond Gregorian bigint value)
+        # Creation time
+        if self.creation_time is None:
+            buffer.extend(
+                unsigned_int(int((datetime.now() - datetime(1, 1, 1)).total_seconds() * 1e7), 8)
+            )
+        else:
+            buffer.extend(unsigned_int(self.creation_time, 8))
+        # Update time
+        if self.update_time is None:
+            buffer.extend(
+                unsigned_int(int((datetime.now() - datetime(1, 1, 1)).total_seconds() * 1e7), 8)  # TODO PUT THAT ON time_100_ns() or idk
+            )
+        else:
+            buffer.extend(unsigned_int(self.update_time, 8))
+
+        # Visibility mode
+        buffer.extend(unsigned_int(self.visibility, 1))
+
+        # Tags
+        buffer.extend(unsigned_int(len(self.tags), 2))
+        for tag in self.tags:
+            buffer.extend(unsigned_int(len(tag), 1))
+            buffer.extend(utf8(tag))
+
+        # Write changes
+        with open(os.path.join(self.project_dir, self.project_name, file_name), 'wb') as f:
+            f.write(buffer)
+
+        return self
 
 
 

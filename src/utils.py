@@ -9,7 +9,7 @@ from builtins import print as printb
 # -------------------- DATA --------------------
 
 # Version
-BRCI_VERSION: str = "D10"  # D(...) is basically 4.(...)
+BRCI_VERSION: str = "D11"  # D(...) is basically 4.(...)
 
 # Paths
 _CWD: str = os.path.dirname(os.path.realpath(__file__))
@@ -210,9 +210,7 @@ def printr(*args, end: str = "\n", sep: str = " ", clear: str = FM.CLEAR_ALL, **
 
     printb(*args, end=f"{end}{clear}", sep=sep, **kwargs)
 
-    return_str = ""
-    for arg in args:
-        return_str += str(arg) + sep
+    return_str = sep.join(args)
     return repr(return_str.strip())[1:-1] # sanitization: do not keep color codes in the return string
 
 # ------------------- TIME-RELATED FUNCTIONS -------------------- #
