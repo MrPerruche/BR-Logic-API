@@ -3,8 +3,14 @@ from typing import Final, Optional, Any
 from datetime import datetime, timezone
 import os.path
 import re
-import numpy as np
 from builtins import print as printb
+
+
+# Externals...
+try:
+    import numpy as np
+except ImportError as e:
+    raise ImportError("Failed to import Numpy! As of BRCI-D, Numpy is a hard requirement. Please install it with `pip install numpy` and try again.")
 
 # -------------------- DATA --------------------
 
@@ -210,7 +216,7 @@ def printr(*args, end: str = "\n", sep: str = " ", clear: str = FM.CLEAR_ALL, **
 
     printb(*args, end=f"{end}{clear}", sep=sep, **kwargs)
 
-    return_str = sep.join(args)
+    return_str = sep.join([str(arg) for arg in args])
     return repr(return_str.strip())[1:-1] # sanitization: do not keep color codes in the return string
 
 # ------------------- TIME-RELATED FUNCTIONS -------------------- #
