@@ -47,7 +47,9 @@ class Creation14:
         # Display text
         self.name: str = name
         self.description: str = description
-        self.tags: list[str] = tags
+
+        self.tags: list[str] = ["Other", "Other", "Other"] if tags is None else tags
+
         self.creation_time: Optional[int] = creation_time
         self.update_time: Optional[int] = update_time
         self.size: list[float] = [0.0, 0.0, 0.0] if size is None else size
@@ -66,6 +68,8 @@ class Creation14:
         # Private
         self.__FILE_VERSION: Final[int] = 14
 
+        # Useful debug log:
+        logwrap("debug", f"Created BRCI instance with the following parameters:\n{"\n".join([f"{k}={v}" for k, v in self.__dict__.items()])}")
 
     def add_brick(self,
                   brick_type: str,
@@ -86,6 +90,9 @@ class Creation14:
         :return:
         """
 
+        # I will put a logger call here, but it will be commented out. Only uncomment it if you REALLY need it, because it will spam like crazy.
+        #logwrap("debug", f"Added new brick. Information: {brick_type=}, {name=}, {position=}, {rotation=}, {properties=}")
+
         self.bricks.append(self.Brick(brick_type, name, position, rotation, properties))
 
         return self
@@ -103,7 +110,7 @@ class Creation14:
         OSError - Project name (project_name) is invalid
         OSError - Project dir (project_dir) is invalid
 
-        Do not return anything.
+        Does not return anything.
         """
 
         # Project name
@@ -114,7 +121,8 @@ class Creation14:
 
                 # Signal there's something wrong
                 FM.error("Invalid project name.", "Your os do not support such folder names. As such, this project cannot be created.")
-
+                logwrap("critical", f"Creation14::assert_valid_parameters || Bad NT project name!: {self.project_name}")
+                
                 raise OSError(f"Invalid project name: couldn't create a file named {self.project_name}." +
                               (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
 
@@ -126,6 +134,7 @@ class Creation14:
 
                 # Signal there's something wrong
                 FM.error("Invalid project path.", "The path you provided is not valid. As such, this project cannot be created.")
+                logwrap("critical", f"Creation14::assert_valid_parameters || Bad project path! (No such directory): {self.project_dir}")
 
                 raise OSError(f"Invalid project path: couldn't create a folder at {self.project_dir}." +
                               (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
@@ -150,7 +159,10 @@ class Creation14:
         """
 
         # TODO: CHECK IF THIS IS VALID FOR POSIX SYSTEMS.
-
+        
+        if os.name == 'posix':
+            logwrap("warning", "Creation14::backup || This function is still a work in progress and may not work on POSIX systems.")
+        
         folder_name = str(get_time_100ns()) if name is None else name
 
         # Assert everything is valid
@@ -161,7 +173,9 @@ class Creation14:
             FM.error("Backup folder not found.",
                      "The path you provided is missing or not valid. As such, this project cannot be created.")
 
-            # This error is cannot be mitigated.
+            logwrap("critical", f"Creation14::backup || Bad backup folder! (No such directory): {dst}")
+
+            # This error cannot be mitigated.
             raise OSError(f"Backup folder not found: couldn't create a folder at {dst}." +
                           (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
 
@@ -173,9 +187,11 @@ class Creation14:
                     return self
         # In case something went wrong, just indicating it was an issue whilst doing the backup.
         except OSError as e:
+            logwrap("critical", f"Creation14::backup || Backup failed! ({e})")
             raise OSError(f'Backup failed! ({e})')
 
         # Else, then it failed, so we end with an error.
+        logwrap("critical", f"Creation14::backup || No Brick Rigs vehicle folder found!")
         raise FileNotFoundError("No Brick Rigs vehicle folder found." +
                                 (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
 
@@ -238,7 +254,9 @@ class Creation14:
             # This error cannot be mitigated
             FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
                                      f"A such named folder cannot be created.")
-
+            
+            logwrap("critical", f"Creation14::write_creation || Bad NT project name!: {self.project_name}")
+            
             raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}" +
                           (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
 
@@ -247,9 +265,13 @@ class Creation14:
 
             FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
                                      f"A such named file cannot be created.")
-
+            
+            logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
+            f"Creation14::write_creation || Bad project name (Already exists)!: {self.project_name} (Error mitigation is set to {settings['attempt_error_mitigation']})")
+            
             if settings['attempt_error_mitigation']:
                 FM.success("Cancelling creation file creation")
+                logwrap("info", f"Creation14::write_creation || Cancelled creation file creation.")
             else:
                 raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
 
@@ -268,6 +290,8 @@ class Creation14:
         prop_id_t__val_id_t_val: dict[int, dict[int, Any]]
         prop_id_t__val_t_val_id: dict[int, dict[int, int]]
         prop_id_t_type, prop_type_t_id, prop_id_t__val_id_t_val, prop_id_t__val_t_val_id = _get_property_data(self.bricks, bricks14)
+        
+        logwrap("debug", "Creation14::write_creation || Calculated header properties, instantiating buffer...")
 
         # #################### GENERATION ####################
 
@@ -285,6 +309,8 @@ class Creation14:
 
         # Brick types
         buffer.extend(_convert_brick_types(brick_types))
+
+        logwrap("debug", "Creation14::write_creation || Header properties -> Buffer completed...")
 
         # -------------------- PART 2: BRICK TYPES --------------------
 
@@ -313,6 +339,8 @@ class Creation14:
             buffer.extend(unsigned_int(len(properties_binary), 4))
             buffer.extend(properties_binary)
             buffer.extend(properties_binary_addon)
+
+        logwrap("debug", "Creation14::write_creation || Brick Properties -> Buffer completed...")
 
         # -------------------- PART 4: BRICKS --------------------
 
@@ -347,6 +375,7 @@ class Creation14:
             buffer.extend(unsigned_int(len(property_bin), 4))
             buffer.extend(property_bin)
 
+        logwrap("debug", "Creation14::write_creation || Bricks -> Buffer completed...")
 
         # -------------------- PART 5: FOOTER AND APPENDIX --------------------
 
@@ -358,7 +387,7 @@ class Creation14:
 
         buffer.extend(self.appendix)
 
-
+        logwrap("debug", "Creation14::write_creation || Footer/Appendix -> Buffer completed. Writing file...")
 
         # #################### WRITING ####################
 
@@ -366,7 +395,7 @@ class Creation14:
         with open(os.path.join(self.project_dir, self.project_name, file_name), 'wb') as f:
             f.write(buffer)
 
-
+        logwrap("info", "Creation writing successful.")
 
         return self
 
@@ -388,6 +417,8 @@ class Creation14:
             FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
                                      f"A such named folder cannot be created.")
 
+            logwrap("critical", f"Creation14::write_metadata || Bad NT path!: {os.path.join(self.project_dir, self.project_name, file_name)}")
+
             raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}" +
                           (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
 
@@ -396,12 +427,18 @@ class Creation14:
             FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
                                      f"A such named file cannot be created.")
 
+            logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
+            f"Creation14::write_creation || Bad project name (Already exists)!: {self.project_name} (Error mitigation is set to {settings['attempt_error_mitigation']})")
+
             if settings['attempt_error_mitigation']:
                 FM.success("Cancelling metadata file creation")
+                logwrap("info", "Creation14::write_metadata || Cancelled metadata file creation.")
             else:
                 raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
 
         # #################### WRITING ####################
+
+        logwrap("info", f"Creation14::write_metadata || Instantiating buffer, writing basic details...")
 
         # Initializing stuff
         buffer: bytearray = bytearray()
@@ -420,6 +457,8 @@ class Creation14:
         # Brick Count
         buffer.extend(unsigned_int(len(self.bricks), 2))
 
+        logwrap("info", "Creation14::write_metadata || Basic details -> Buffer completed...")
+
         # Vehicle Size
         for axis_size in self.size:
             buffer.extend(sp_float(axis_size))
@@ -436,6 +475,9 @@ class Creation14:
             )
         else:
             buffer.extend(unsigned_int(self.creation_time, 8))
+
+        logwrap("info", "Creation14::write_metadata || Extended details -> Buffer completed...")
+
         # Update time
         if self.update_time is None:
             buffer.extend(
@@ -453,9 +495,16 @@ class Creation14:
             buffer.extend(unsigned_int(len(tag), 1))
             buffer.extend(utf8(tag))
 
+        logwrap("info", "Creation14::write_metadata || All details -> Buffer completed. Writing file...")
+
         # Write changes
+        if not os.path.exists(os.path.join(self.project_dir, self.project_name)):
+            # Create the directory. open() will NOT do it for us.
+            os.makedirs(os.path.join(self.project_dir, self.project_name), exist_ok=True)
         with open(os.path.join(self.project_dir, self.project_name, file_name), 'wb') as f:
             f.write(buffer)
+
+        logwrap("info", "Creation14::write_metadata || Metadata writing successful.")
 
         return self
 

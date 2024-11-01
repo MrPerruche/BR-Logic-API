@@ -1,3 +1,5 @@
+# Almost none of this needs to be ignored (NEVER used), some ignores are classified incorrectly (see .log), and it would be nicer if this file was cleaner.
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -26,7 +28,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# PyInstaller
+# PyInstaller (bad, use nuitka)
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
@@ -55,8 +57,11 @@ cover/
 *.mo
 *.pot
 
-# Django stuff:
+# Logging
 *.log
+# Moved from Django because .log is a *general* format, not Django. BRCI also uses it's own logging system.
+
+# Django stuff:
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -162,3 +167,10 @@ cython_debug/
 #.idea/
 
 *.pyc
+
+
+# DO NOT USE GITIGNORE TEMPLATES FOR THE LOVE OF GOD.
+
+# Projects directory:
+src/Projects/*
+!src/Projects/**/*.gitkeep

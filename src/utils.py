@@ -1,16 +1,23 @@
 # from collections.abc import MutableMapping, MutableSequence
-from typing import Final, Optional, Any
+from typing import Final, Optional, Any, Literal
 from datetime import datetime, timezone
 import os.path
 import re
 from builtins import print as printb
 
+we_have_logging = False
 
 # Externals...
 try:
     import numpy as np
 except ImportError as e:
     raise ImportError("Failed to import Numpy! As of BRCI-D, Numpy is a hard requirement. Please install it with `pip install numpy` and try again.")
+
+try:
+    import logging
+    we_have_logging = True
+except ImportError:
+    print("`logging` module not found. Logging is a soft-dependency. Please install it, as it can greatly help the debugging process.")
 
 # -------------------- DATA --------------------
 
@@ -45,6 +52,26 @@ settings: dict[str, Any] = {
     'attempt_error_mitigation': True
 }
 
+if we_have_logging:
+    # The import exists.
+    logfile_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'brci.log')
+
+    if os.path.exists(logfile_path):
+        # Remove log file if it exists. By default, logging uses append.
+        os.remove(logfile_path)
+
+    logger = logging.getLogger("BRCI")
+    logger.setLevel(logging.DEBUG)
+
+    file_handler = logging.FileHandler(logfile_path, mode="a", encoding="utf-8", errors="ignore") # For some god forsaken reason, if mode is not append, it doesn't log.
+                                                                                                  # after this `if` statement. Period. No clue why.
+                                                                                                  # DO NOT TOUCH. Black magic at work.
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    logger.info("Logging set up!")
 
 class Limits:
 
@@ -219,13 +246,49 @@ def printr(*args, end: str = "\n", sep: str = " ", clear: str = FM.CLEAR_ALL, **
     return_str = sep.join([str(arg) for arg in args])
     return repr(return_str.strip())[1:-1] # sanitization: do not keep color codes in the return string
 
+
+# --------------------    LOGGING    -------------------- #
+
+
+def logwrap(level: Literal["info", "debug", "warning", "error", "critical"], msg: str) -> str:
+    """A special function in place of the regular `logging` calls, as to not raise errors if `logging` is not found.
+
+    Args:
+        level (Literal["info", "debug", "warning", "error", "critical"]): The log level.
+        msg (str): The message to log.
+
+    Returns:
+        str: The message logged. Good for using this function in print statements, function calls, variables, etc.
+    """
+
+    if we_have_logging:
+        match level:
+            case "info":
+                logger.info(msg)
+            case "debug":
+                logger.debug(msg)
+            case "warning":
+                logger.warning(msg)
+            case "error":
+                logger.error(msg)
+            case "critical":
+                logger.critical(msg)
+            case _:
+                # Not a valid log level. Default to info with a warning message.
+                logger.info(f"(Note: Invalid log level '{level}'!) || {msg}")
+    else:
+        print("Logwrap called, but logging disabled...")
+
+    return msg
+
+
 # ------------------- TIME-RELATED FUNCTIONS -------------------- #
 
 
 def get_time_100ns() -> int:
 
     """
-    Get the current time in 100 nanoseconds. Notably used in metadata and for BRCI backups.
+    Get the current time in 100 nanoseconds precision. Notably used in metadata and for BRCI backups.
 
     :return: 100s of nanoseconds since 0001-01-01 00:00:00
     :rtype: int
@@ -257,28 +320,49 @@ def is_valid_folder_name(name: str, is_nt: bool) -> bool:
     if is_nt:
         # Check for NT system validity
         # nt_match = r'[<>:"/\\|?*]'  # TODO figure out a better solution for path issues
+
         nt_match = r'[<>:"/|?*]'
-        """
-        if re.search(nt_match, name): print("fuck you regex")
-        if len(name) == 0: print("fuck you len")
-        if set(name) == set(): print("fuck you sets")
-        if name[-1] in {'.', ' '}: print("fuck you last character")
-        if name in (
-                "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-                "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"): print("fuck you banned strs")
-        """
-        if re.search(nt_match, name[2:] if len(name) > 1 and name[1] == ':' else name) or len(name) == 0 or set(name
-                ) == set() or name[-1] in {'.', ' '} or name in ("CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3",
+        
+        #
+        #if re.search(nt_match, name): print("fuck you regex")
+        #if len(name) == 0: print("fuck you len")
+        #if set(name) == set(): print("fuck you sets")
+        #if name[-1] in {'.', ' '}: print("fuck you last character")
+        #if name in (
+        #        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        #        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"): print("fuck you banned strs")
+        # Making these lines comments because I felt like it, and because it was a massive block of neon green string text for me. :bob_troll:
+        
+        bad_folder_names = ("CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3",
                 "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7",
-                "LPT8", "LPT9"):
+                "LPT8", "LPT9") # Technically EVER SO SLIGHTLY less efficient to make this a full variable, but screw you, fight with me over it. More readable.
+        
+        # In the name of readability, I call upon thee, backslashes!
+        # Once again, argue with me if you have an issue with it. This was horrid unreadable spaghetti before I did this backslash stuff.
+        # Much better.
+
+        if re.search(nt_match, name[2:] if len(name) > 1 and name[1] == ':' else name) or \
+        len(name) == 0 or \
+        set(name) == set() or \
+        name[-1] in {'.', ' '} or \
+        name in bad_folder_names:
+            # This name is invalid. Return False.
+            logwrap("warning", f"NT directory name check *failed*. Dirname: {name}")
+            # If you have an issue with logs being here, let me know. These will help with debugging.
+            # If you want to disable logs in random areas like these ones, they're usually set to debug, just set the logger to a higher level to filter them out.
             return False
+        else:
+            # Once again, let me know.
+            logwrap("info", f"NT directory name check *passed*. Dirname: {name}")
+
     else:
         # Check for POSIX system validity
         posix_match = r'[<>:"/\\|?*\x00-\x1F]'
         if re.search(posix_match, name) or len(name) == 0 or set(name) == set():
+            logwrap("warning", f"POSIX directory name check *failed*. Dirname: {name}")
             return False
+        else:
+            logwrap("info", f"POSIX directory name check *passed*. Dirname: {name}")
 
     # else: valid
     return True
-
-
