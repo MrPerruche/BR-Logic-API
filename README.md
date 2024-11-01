@@ -1,4 +1,4 @@
-# Brick Rigs Creation Interface D (Version D12)
+# Brick Rigs Creation Interface D (Version D14)
 
 # WARNING: BRCI-D IS STILL IN ITS EARLY STAGES OF DEVELOPMENT AND IS NOT IN ANY WAY FUNCTIONAL. PLEASE USE BRCI-C (main branch) INSTEAD.
 

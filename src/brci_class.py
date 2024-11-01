@@ -447,11 +447,11 @@ class Creation14:
         buffer.extend(unsigned_int(self.get_version(), 1))
 
         # File name
-        buffer.extend(unsigned_int(-len(self.name), 2))
+        buffer.extend(signed_int(-len(self.name), 2))
         buffer.extend(utf16(self.name)[2:])
 
         # Description:
-        buffer.extend(unsigned_int(-len(self.description), 2))
+        buffer.extend(signed_int(-len(self.description), 2))
         buffer.extend(utf16(self.description)[2:])
 
         # Brick Count
@@ -508,9 +508,87 @@ class Creation14:
 
         return self
 
+    def read_creation(self, file_path: str) -> Self:
+        """
+        Will read the .brv (vehicle) file, and append it to the creation's bricks.
 
+        :param file_path: Path of the .brv file
+        :type file_path: str
 
+        :raises FileNotFoundError: If the file does not exist
+        :raises NotImplementedError: Either this function isn't finished, or the file being read is from a higher version
 
+        :return: self
+        """
+
+        raise NotImplementedError()
+
+        if not os.path.exists(file_path):
+            FM.error("Invalid path", f"Path {file_path} is invalid.\n"
+                                     f"A such named file cannot be read.")
+            
+            logwrap("warning" if settings['attempt_error_mitigation'] else "critical", "Creation14::read_creation || Specified file does not exist.")
+            
+            if settings['attempt_error_mitigation']:
+                FM.success("Cancelling creation file read...")
+                logwrap("info", "Creation14::read_creation || Cancelled creation file read.")
+            else:
+                raise FileNotFoundError(f"Invalid path {file_path}")
+
+        with open(file_path, 'rb') as f:
+            buffer = f.read()
+        
+        # That's all we need from the with statement.
+        # Now we need to write, in reverse.
+
+        # The first byte is the version number. If it is higher than ours, we must raise an error. Brick Rigs isn't *forward* compatible.
+        file_version = buffer[0]
+
+        # Version check:
+        if file_version > self.get_version():
+            FM.error("Invalid version", f"Version {file_version} is not supported (higher than your version, {self.get_version()}).\n"
+                                     f"A such version cannot be read.")
+            
+            logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
+            f"Creation14::read_creation || Bad file version! BRCI cannot see the future: {file_version}")
+            
+            if settings['attempt_error_mitigation']:
+                FM.success("Cancelling creation file read...")
+                logwrap("info", "Creation14::read_creation || Cancelled creation file read.")
+            else:
+                raise NotImplementedError(f"Invalid version {file_version} (higher than your version, {self.get_version()})")
+
+        # The next two bytes are the number of bricks in the creation. (uint16)
+        num_bricks = get_unsigned_int(buffer[1:3])
+        # We cannot verify num_bricks. We only get the two-byte snippet. If we check for it being higher than the integer limit, it'll just say it isn't.
+        
+        # The next two bytes are the number of unique brick types.
+        num_brick_types = get_unsigned_int(buffer[3:5])
+        # And the next two, the number of unique properties:
+        num_properties = get_unsigned_int(buffer[5:7])
+
+        file_brick_types = []
+        buffer_head_location = 7
+        for i in range(num_brick_types):
+            # The next byte is the length of the brick type name:
+            brick_type_length = buffer[7 + i]
+            # Bump the head location to the current position, this is so that we don't have to recalculate this:
+            buffer_head_location = (8 + i + brick_type_length)
+            # Then we can extract the actual type by reading the next `brick_type_length` bytes:
+            file_brick_types.append(buffer[(8 + i):buffer_head_location].decode('utf-8'))
+        logwrap("debug", "Creation14::read_creation || Buffer -> Header info completed...")
+
+        file_properties = {} # Oh boy...
+
+        for i in range(num_properties):
+            # The next byte is the length of the property name:
+            property_len = buffer[buffer_head_location]
+            buffer_head_location = (buffer_head_location + 1 + property_len)
+            # Then read the next `property_len` bytes:
+            property_name = buffer[buffer_head_location - property_len:buffer_head_location].decode('utf-8')
+            # The next 2 bytes are the number of values:
+            buffer_head_location = (buffer_head_location + 2)
+            num_values = get_unsigned_int(buffer[buffer_head_location-2:buffer_head_location])
 
 
 
