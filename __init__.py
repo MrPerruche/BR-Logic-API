@@ -41,7 +41,7 @@ Most functions will have docstrings, as well as BRCI having markdown files and a
 An example of using BRCI::
 
 
-  >>> import BRCI as brci
+  >>> import brci
   ... 
   >>> vehicle = brci.Creation14()
   ...

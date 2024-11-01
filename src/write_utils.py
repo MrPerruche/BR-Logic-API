@@ -284,7 +284,7 @@ def signed_int(integer: int, byte_len: int) -> bytes:
     :return: Bytes
     """
 
-    if integer < 2**(byte_len*8-1):
+    if integer < -2**(byte_len*8-1):
         raise OverflowError(f'Input is less than {byte_len*8} bit limit of signed integer.')
 
     if integer >= 2**(byte_len*8-1):
@@ -342,3 +342,16 @@ def utf16(string: str) -> bytes:
     """
 
     return string.encode('utf-16')
+
+
+
+#OTHER
+
+def extract_bytes(ba: bytearray, n: int):
+
+    if n > len(ba): n = len(ba)
+
+    result = ba[:n]
+    del ba[:n]
+
+    return result

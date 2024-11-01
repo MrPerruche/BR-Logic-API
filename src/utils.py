@@ -22,7 +22,7 @@ except ImportError:
 # -------------------- DATA --------------------
 
 # Version
-BRCI_VERSION: str = "D11"  # D(...) is basically 4.(...)
+BRCI_VERSION: str = "D13"  # D(...) is basically 4.(...)
 
 # Paths
 _CWD: str = os.path.dirname(os.path.realpath(__file__))
