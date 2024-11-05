@@ -1,4 +1,4 @@
-from typing import Final, Literal
+from typing import Final, Literal, Optional
 from .utils import FM, settings
 import colorsys
 
@@ -611,3 +611,34 @@ def cmyk(color: list[float | int], old_max: float = 255.0) -> list[int]:
         alpha = True
 
     return convert_color(color, 'cmyk', 'hsv', alpha, old_max)
+
+
+
+
+# -------------------- BRICK INPUTS --------------------
+
+def brick_input14(prop_name: str, input_type: str, value: float | int = 1.0, source_bricks: Optional[list[str]] = None) -> dict[str, float | int | list[str]]:
+
+    """
+    Converts a list of arguments into a list of properties corresponding to brick inputs to provide similarity with BRCI-C.
+    Same as `brci.BrickInput14()`
+
+    :param prop_name: Name of the property, e.g. `'EnabledInputChannel'`
+    :param input_type: Type of the input
+    :param value: Value of the input
+    :param source_bricks: List of source bricks
+    :return: List of properties
+    """
+
+    return {
+        f'{prop_name}.InputAxis': input_type,
+        f'{prop_name}.SourceBricks': [] if source_bricks is None else source_bricks,
+        f'{prop_name}.Value': value
+    }
+
+
+# Since BrickInput() originates from a class:
+#noinspection PyPep8Naming
+def BrickInput14(prop_name: str, input_type: str, value: float | int = 1.0, source_bricks: Optional[list[str]] = None) -> dict[str, float | int | list[str]]:
+
+    return brick_input14(prop_name, input_type, value, source_bricks)

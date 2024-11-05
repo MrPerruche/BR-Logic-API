@@ -508,6 +508,54 @@ class Creation14:
 
         return self
 
+
+    def write_preview(self, image_path: str, file_name: str = 'Preview.png', exist_ok: bool = True) -> Self:
+
+        # TODO: Docstring
+
+        # ################### VERIFYING PATHS ####################
+
+        if not os.path.exists(image_path):
+            # This error cannot be mitigated
+            FM.error("Image missing",
+                     f"No image found at {os.path.join(self.project_dir, self.project_name, file_name)}\n"
+                     f"Image could not be taken")
+
+            logwrap("critical", f"Creation14::write_preview || Image missing: {self.project_name}")
+
+            raise OSError(f"Image missing {os.path.join(self.project_dir, self.project_name, file_name)}." +
+                          (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+
+        # TODO CHECK FOR PATH & NAME VALIDITY
+
+        if not exist_ok and os.path.exists(os.path.join(self.project_dir, self.project_name, file_name)):
+
+            FM.error("Invalid path",
+                     f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
+                     f"A such named file cannot be created.")
+
+            logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
+                    f"Creation14::write_creation || Bad project name (Already exists)!: {self.project_name} (Error mitigation is set to {settings['attempt_error_mitigation']})")
+
+            if settings['attempt_error_mitigation']:
+                FM.success("Cancelling creation file creation")
+                logwrap("info", f"Creation14::write_creation || Cancelled creation file creation.")
+            else:
+                raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
+
+        # ################### WRITING IMAGE ####################
+
+        with open(image_path, 'rb') as f:
+            image = f.read()
+
+        with open(os.path.join(self.project_dir, self.project_name, file_name), 'wb') as f:
+            f.write(image)
+
+        return self
+
+
+
+
     def read_creation(self, file_path: str) -> Self:
         """
         Will read the .brv (vehicle) file, and append it to the creation's bricks.
@@ -521,7 +569,7 @@ class Creation14:
         :return: self
         """
 
-        raise NotImplementedError()
+        if not settings['wip_features']: raise NotImplementedError()
 
         if not os.path.exists(file_path):
             FM.error("Invalid path", f"Path {file_path} is invalid.\n"
@@ -536,59 +584,116 @@ class Creation14:
                 raise FileNotFoundError(f"Invalid path {file_path}")
 
         with open(file_path, 'rb') as f:
-            buffer = f.read()
+            file = bytearray(f.read())
         
         # That's all we need from the with statement.
         # Now we need to write, in reverse.
 
-        # The first byte is the version number. If it is higher than ours, we must raise an error. Brick Rigs isn't *forward* compatible.
-        file_version = buffer[0]
+        file_version: int = get_unsigned_int(extract_bytes(file, 1))
 
         # Version check:
-        if file_version > self.get_version():
-            FM.error("Invalid version", f"Version {file_version} is not supported (higher than your version, {self.get_version()}).\n"
+        if file_version != self.get_version():
+            FM.error("Invalid version", f"Version {file_version} mismatch, {self.get_version()}).\n"
                                      f"A such version cannot be read.")
             
             logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
-            f"Creation14::read_creation || Bad file version! BRCI cannot see the future: {file_version}")
+            f"Creation14::read_creation || Bad file version! Creation14 does not support: {file_version}")
             
             if settings['attempt_error_mitigation']:
                 FM.success("Cancelling creation file read...")
                 logwrap("info", "Creation14::read_creation || Cancelled creation file read.")
             else:
-                raise NotImplementedError(f"Invalid version {file_version} (higher than your version, {self.get_version()})")
+                raise NotImplementedError(f"Version {file_version} mismatch, {self.get_version()})")
 
         # The next two bytes are the number of bricks in the creation. (uint16)
-        num_bricks = get_unsigned_int(buffer[1:3])
-        # We cannot verify num_bricks. We only get the two-byte snippet. If we check for it being higher than the integer limit, it'll just say it isn't.
-        
-        # The next two bytes are the number of unique brick types.
-        num_brick_types = get_unsigned_int(buffer[3:5])
-        # And the next two, the number of unique properties:
-        num_properties = get_unsigned_int(buffer[5:7])
+        num_bricks: int = get_unsigned_int(extract_bytes(file, 2))
 
-        file_brick_types = []
-        buffer_head_location = 7
-        for i in range(num_brick_types):
-            # The next byte is the length of the brick type name:
-            brick_type_length = buffer[7 + i]
-            # Bump the head location to the current position, this is so that we don't have to recalculate this:
-            buffer_head_location = (8 + i + brick_type_length)
-            # Then we can extract the actual type by reading the next `brick_type_length` bytes:
-            file_brick_types.append(buffer[(8 + i):buffer_head_location].decode('utf-8'))
+        # The next two bytes are the number of unique brick types.
+        num_brick_types: int = get_unsigned_int(extract_bytes(file, 2))
+        # And the next two, the number of unique properties:
+        num_properties: int = get_unsigned_int(extract_bytes(file, 2))
+
+        file_brick_types: set = set()
+        for _ in range(num_brick_types):
+            file_brick_types.add(extract_str8(file))
         logwrap("debug", "Creation14::read_creation || Buffer -> Header info completed...")
 
-        file_properties = {} # Oh boy...
 
-        for i in range(num_properties):
-            # The next byte is the length of the property name:
-            property_len = buffer[buffer_head_location]
-            buffer_head_location = (buffer_head_location + 1 + property_len)
-            # Then read the next `property_len` bytes:
-            property_name = buffer[buffer_head_location - property_len:buffer_head_location].decode('utf-8')
-            # The next 2 bytes are the number of values:
-            buffer_head_location = (buffer_head_location + 2)
-            num_values = get_unsigned_int(buffer[buffer_head_location-2:buffer_head_location])
+
+        # -------------------- PART 2: PROPERTIES -------------------- #
+
+        properties: dict[str, list[Any]] = {}
+
+        for _ in range(num_properties):
+
+            prop_name: str = extract_str8(file)
+            num_values: int = get_unsigned_int(extract_bytes(file, 2))
+            bin_len: int = get_unsigned_int(extract_bytes(file, 4))
+            bin_properties: bytearray = extract_bytes(file, bin_len)
+
+            bin_values: list[bytearray] = []
+            values: list[any] = []
+
+            first_len: int = get_unsigned_int(extract_bytes(bin_properties, 2))
+
+            if first_len == 0:
+                for _ in range(num_values):
+                    bin_values.append(extract_bytes(bin_properties, get_unsigned_int(extract_bytes(file, 2))))
+
+            else:
+                if num_values > 1:
+                    bin_values = [extract_bytes(bin_properties, first_len)]
+
+                else:
+                    bin_values = [bin_properties]
+
+            for bin_value in bin_values:
+
+                match property_types14[prop_name]:
+
+                    case 'bin':
+                        values.append(bin_value)
+
+                    case 'bool':
+                        values.append(bin_value == b'\x01')
+
+                    case 'brick_id':
+                        values.append(get_unsigned_int(bin_value[-2:]))
+
+                    case 'float':
+                        values.append(get_sp_float(bin_value))
+
+                    case 'list[3*float]':
+                        values.append([get_sp_float(bin_value[i:i+4]) for i in range(0, 12, 4)])
+
+                    case 'list[3*uint8]':
+                        values.append([get_unsigned_int(bin_value[i:i+1]) for i in range(0, 3, 1)])
+
+                    case 'list[4*uint8]':
+                        values.append([get_unsigned_int(bin_value[i:i+1]) for i in range(0, 4, 1)])
+
+                    case 'list[6*uint2]':
+                        values.append([(get_unsigned_int(bin_value) >> i) & 0x3 for i in range(12, -1, -2)])
+
+                    case 'list[brick_id]':
+                        values.append([get_unsigned_int(extract_bytes(bin_value, 2)) for _ in range(get_unsigned_int(extract_bytes(bin_value, 2)))])
+
+                    case 'str8':
+                        values.append(extract_str8(bin_value))
+
+                    case 'strany':
+                        values.append(extract_str16(bin_value))
+
+                    case 'uint8':
+                        values.append(get_unsigned_int(bin_value))
+
+            properties.update({prop_name: values})
+
+
+
+
+
+
 
 
 

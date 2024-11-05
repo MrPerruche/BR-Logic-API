@@ -1,7 +1,7 @@
 from typing import SupportsBytes, Any
 # from .brick import Brick
 from .utils import settings, FM
-from struct import pack as struct_pack
+from struct import pack as struct_pack, unpack as struct_unpack
 
 
 # ------------------- CREATION GENERATION ---------------------
@@ -117,90 +117,91 @@ def _get_prop_bin(prop_type: str, id_: int,
         # Convert to binary (bytearray)
         try:
 
-            if prop_type == 'bin':
-                converted = ite_val
+            match prop_type:
+                case 'bin':
+                    converted = ite_val
 
-            elif prop_type == 'bool':
-                converted = b'\x01' if ite_val else b'\x00'
+                case 'bool':
+                    converted = b'\x01' if ite_val else b'\x00'
 
-            elif prop_type == 'brick_id':
-                if ite_val is None:
-                    converted = b'\x00'
-                else:
+                case 'brick_id':
+                    if ite_val is None:
+                        converted = b'\x00\x00'
+                    else:
+                        try:
+                            converted = unsigned_int(1, 2)
+                            converted += unsigned_int(brick_id_table[ite_val]+1, 2)
+                        except IndexError:
+                            raise IndexError(f"Brick {ite_val!r} is missing from the brick id table: it does not exist.")
+
+                case 'float':
+                    converted = sp_float(ite_val)
+
+                case 'list[3*float]':
                     try:
-                        converted = unsigned_int(1, 2)
-                        converted += unsigned_int(brick_id_table[ite_val]+1, 2)
+                        # Loops are slow in python. Micro optimisation goes brrr
+                        converted = sp_float(ite_val[0])
+                        converted += sp_float(ite_val[1])
+                        converted += sp_float(ite_val[2])
+                    except IndexError:
+                        raise ValueError("Provided list is shorter than 3 floats long.")
+
+                case 'list[3*uint8]':
+                    try:
+                        # Loops are slow in python. Micro optimisation goes brrr
+                        converted = unsigned_int(ite_val[0], 1)
+                        converted += unsigned_int(ite_val[1], 1)
+                        converted += unsigned_int(ite_val[2], 1)
+                    except IndexError:
+                        raise ValueError("Provided list is shorter than 3 unsigned 8-bit integers long.")
+
+                case 'list[4*uint8]':
+                    try:
+                        # Loops are slow in python. Micro optimisation goes brrr
+                        converted = unsigned_int(ite_val[0], 1)
+                        converted += unsigned_int(ite_val[1], 1)
+                        converted += unsigned_int(ite_val[2], 1)
+                        converted += unsigned_int(ite_val[3], 1)
+                    except IndexError:
+                        raise ValueError("Provided list is shorter than 4 unsigned 8-bit integers long.")
+
+                case 'list[6*uint2]':
+                    # Loops are slow in python. Micro optimisation goes brrr
+                    converted = unsigned_int(ite_val[0] + (ite_val[1] << 2) + (ite_val[2] << 4) + (ite_val[3] << 6) +
+                                               (ite_val[4] << 8) +  (ite_val[5] << 10), 2)
+
+                case 'list[brick_id]':
+                    try:
+                        converted = unsigned_int(len(ite_val), 2)
+                        for brick_id in ite_val:
+                            converted += unsigned_int(brick_id_table[brick_id]+1, 2)
                     except IndexError:
                         raise IndexError(f"Brick {ite_val!r} is missing from the brick id table: it does not exist.")
 
-            elif prop_type == 'float':
-                converted = sp_float(ite_val)
-
-            elif prop_type == 'list[3*float]':
-                try:
-                    # Loops are slow in python. Micro optimisation goes brrr
-                    converted = sp_float(ite_val[0])
-                    converted += sp_float(ite_val[1])
-                    converted += sp_float(ite_val[2])
-                except IndexError:
-                    raise ValueError("Provided list is shorter than 3 floats long.")
-
-            elif prop_type == 'list[3*uint8]':
-                try:
-                    # Loops are slow in python. Micro optimisation goes brrr
-                    converted = unsigned_int(ite_val[0], 1)
-                    converted += unsigned_int(ite_val[1], 1)
-                    converted += unsigned_int(ite_val[2], 1)
-                except IndexError:
-                    raise ValueError("Provided list is shorter than 3 unsigned 8-bit integers long.")
-
-            elif prop_type == 'list[4*uint8]':
-                try:
-                    # Loops are slow in python. Micro optimisation goes brrr
-                    converted = unsigned_int(ite_val[0], 1)
-                    converted += unsigned_int(ite_val[1], 1)
-                    converted += unsigned_int(ite_val[2], 1)
-                    converted += unsigned_int(ite_val[3], 1)
-                except IndexError:
-                    raise ValueError("Provided list is shorter than 4 unsigned 8-bit integers long.")
-
-            elif prop_type == 'list[6*uint2]':
-                # Loops are slow in python. Micro optimisation goes brrr
-                converted = unsigned_int(ite_val[0] + (ite_val[1] << 2) + (ite_val[2] << 4) + (ite_val[3] << 6) +
-                                           (ite_val[4] << 8) +  (ite_val[5] << 10), 2)
-
-            elif prop_type == 'list[brick_id]':
-                try:
-                    converted = unsigned_int(len(ite_val), 2)
-                    for brick_id in ite_val:
-                        converted += unsigned_int(brick_id_table[brick_id]+1, 2)
-                except IndexError:
-                    raise IndexError(f"Brick {ite_val!r} is missing from the brick id table: it does not exist.")
-
-            elif prop_type == 'str8':
-                try:
-                    converted = unsigned_int(len(ite_val), 1)
-                    converted += ite_val.encode('ascii')
-                except UnicodeEncodeError:
-                    raise ValueError("Provided string is not 8-bit ASCII.")
-
-            elif prop_type == 'strany':
-                is_ascii: bool = True
-                try:
-                    converted = ite_val.encode('ascii')
-                except UnicodeEncodeError:
-                    is_ascii: bool = False
+                case 'str8':
                     try:
-                        converted = ite_val.encode('utf-16')[2:]
-                    except UnicodeEncodeError as e:
-                        raise ValueError("Provided string can be encoded in neither ASCII nor UTF-16.") from e
-                if is_ascii:
-                    converted = signed_int(len(ite_val), 2) + converted
-                else:
-                    converted = signed_int(-len(ite_val), 2) + converted
+                        converted = unsigned_int(len(ite_val), 1)
+                        converted += ite_val.encode('ascii')
+                    except UnicodeEncodeError:
+                        raise ValueError("Provided string is not 8-bit ASCII.")
 
-            elif prop_type == 'uint8':
-                converted = unsigned_int(ite_val, 1)
+                case 'strany':
+                    is_ascii: bool = True
+                    try:
+                        converted = ite_val.encode('ascii')
+                    except UnicodeEncodeError:
+                        is_ascii: bool = False
+                        try:
+                            converted = ite_val.encode('utf-16')[2:]
+                        except UnicodeEncodeError as e:
+                            raise ValueError("Provided string can be encoded in neither ASCII nor UTF-16.") from e
+                    if is_ascii:
+                        converted = signed_int(len(ite_val), 2) + converted
+                    else:
+                        converted = signed_int(-len(ite_val), 2) + converted
+
+                case 'uint8':
+                    converted = unsigned_int(ite_val, 1)
 
             if uniform_length:
                 if last_elem_length != len(converted) and last_elem_length != -1:
@@ -239,7 +240,7 @@ def _get_prop_bin(prop_type: str, id_: int,
 # ------------------- GENERAL --------------------
 
 
-def get_signed_int(bin_value: SupportsBytes) -> int:
+def get_signed_int(bin_value: bytes | bytearray) -> int:
 
     """
     Convert bytes to a signed integer.
@@ -251,7 +252,7 @@ def get_signed_int(bin_value: SupportsBytes) -> int:
     return int.from_bytes(bin_value, byteorder='little', signed=True)
 
 
-def get_unsigned_int(bin_value: SupportsBytes) -> int:
+def get_unsigned_int(bin_value: bytes | bytearray) -> int:
 
     """
     Convert bytes to an unsigned integer.
@@ -318,6 +319,11 @@ def sp_float(float_: float) -> bytes:
     return struct_pack('<f', float_).ljust(4, b'\x00')[:4]
 
 
+def get_sp_float(ba: bytearray) -> float:
+
+    return struct_unpack('<f', bytes(ba[:4]))[0]
+
+
 
 
 def utf8(string: str) -> bytes:
@@ -332,6 +338,18 @@ def utf8(string: str) -> bytes:
     return string.encode('ascii')
 
 
+def get_utf8(bin_value: bytes | bytearray) -> str:
+
+    """
+    Convert UTF-8 bytes to a string.
+
+    :param bin_value: String
+    :return: Bytes
+    """
+
+    return bin_value.decode('ascii')
+
+
 def utf16(string: str) -> bytes:
 
     """
@@ -344,10 +362,21 @@ def utf16(string: str) -> bytes:
     return string.encode('utf-16')
 
 
+def get_utf16(bin_value: bytes | bytearray) -> str:
+
+    """
+    Convert UTF-16 bytes to a string.
+
+    :param bin_value: String
+    :return: Bytes
+    """
+
+    return bin_value.decode('utf-16')
+
 
 #OTHER
 
-def extract_bytes(ba: bytearray, n: int):
+def extract_bytes(ba: bytearray, n: int) -> bytearray:
 
     if n > len(ba): n = len(ba)
 
@@ -355,3 +384,32 @@ def extract_bytes(ba: bytearray, n: int):
     del ba[:n]
 
     return result
+
+
+
+def extract_str8(ba: bytearray) -> str:
+
+    """
+    Extracts UTF-8 encoded string (requires len num)
+
+    :param ba:
+    :return:
+    """
+
+    return get_utf8(extract_bytes(ba, get_unsigned_int(extract_bytes(ba, 1))))
+
+def extract_str16(ba: bytearray) -> str:
+
+    """
+    Extracts UTF-16 encoded string (requires len num)
+
+    :param ba:
+    :return:
+    """
+
+    str_len: int = get_unsigned_int(extract_bytes(ba, 2))
+    if str_len < 0:
+        return get_utf16(extract_bytes(ba, -str_len))
+    else:
+        return get_utf8(extract_bytes(ba, str_len))
+

@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import os.path
 import re
 from builtins import print as printb
+import functools
 
 we_have_logging = False
 
@@ -19,10 +20,12 @@ try:
 except ImportError:
     print("`logging` module not found. Logging is a soft-dependency. Please install it, as it can greatly help the debugging process.")
 
+
+
 # -------------------- DATA --------------------
 
 # Version
-BRCI_VERSION: str = "D13"  # D(...) is basically 4.(...)
+BRCI_VERSION: str = "D15"  # D(...) is basically 4.(...)
 
 # Paths
 _CWD: str = os.path.dirname(os.path.realpath(__file__))
@@ -45,11 +48,15 @@ BACKUP_FOLDER: str = os.path.join(_CWD, 'Backups')
 
 NO_THUMBNAIL: str = os.path.join(_CWD, 'resources', 'no_thumbnail.png')
 BRCI_THUMBNAIL: str = os.path.join(_CWD, 'resources', 'brci.png')
+BLANK_THUMBNAIL: str = os.path.join(_CWD, 'resources', 'blank.png')
+MISSING_THUMBNAIL: str = os.path.join(_CWD, 'resources', 'missing_thumbnail.png')  # TODO: add this image (i'll take care of it since I got brmk, -perru)
+
 
 # Settings
 settings: dict[str, Any] = {
     'show_logs': True,
-    'attempt_error_mitigation': True
+    'attempt_error_mitigation': True,
+    'wip_features': False
 }
 
 if we_have_logging:
@@ -63,7 +70,7 @@ if we_have_logging:
     logger = logging.getLogger("BRCI")
     logger.setLevel(logging.DEBUG)
 
-    file_handler = logging.FileHandler(logfile_path, mode="a", encoding="utf-8", errors="ignore") # For some god forsaken reason, if mode is not append, it doesn't log.
+    file_handler = logging.FileHandler(logfile_path, mode="a", encoding="utf-8", errors="ignore") # For some godforsaken reason, if mode is not append, it doesn't log.
                                                                                                   # after this `if` statement. Period. No clue why.
                                                                                                   # DO NOT TOUCH. Black magic at work.
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -201,6 +208,35 @@ class FM:
 
     @staticmethod
     def success(message: str, details: Optional[str] = None, force_print: bool = False) -> bool:
+
+        """
+        Will print a warning message if show_logs is set to True.
+
+        :param message: Header of the warning, reversed.
+        :param details: Details of the warning, not reversed. If omitted (set to None), details will be omitted and the message will not be reversed.
+        :param force_print: Will print regardless of what show_logs is set to.
+
+        :return: True if the message was printed, else False.
+        :rtype: bool
+        """
+
+        if force_print or settings['show_logs']:
+
+            # If we specified details
+            if details is not None:
+                print(f'{FM.YELLOW}{FM.REVERSE}[WARN] {message}{FM.CLEAR_REVERSE} \n{details}{FM.CLEAR_ALL} ')
+            # If we did not specify details
+            else:
+                print(f'{FM.YELLOW}{FM.REVERSE}[WARN]{FM.CLEAR_REVERSE} {message}{FM.CLEAR_ALL} ')
+
+            # Either way, the message was printed
+            return True
+
+        # else:
+        return False
+
+    @staticmethod
+    def warning(message: str, details: Optional[str] = None, force_print: bool = False) -> bool:
 
         """
         Will print a success message if show_logs is set to True.
