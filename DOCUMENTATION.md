@@ -10,7 +10,7 @@ copy values into the right function, change inputs (see src.bricks.\_\_init\_\_ 
 - Fix all TODOs
 - Redo main \_\_init\_\_ file to put code that's helpful and won't raise errors
 - ~~Add Creation14.write_metadata()~~
-- Add Creation14.write_preview()
+- ~~Add Creation14.write_preview()~~
 - ~~Add Creation14.load_creation()~~
 - Add Creation14.load_metadata()
 - Create examples

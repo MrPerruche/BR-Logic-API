@@ -5,6 +5,9 @@ import os.path
 import re
 from builtins import print as printb
 import functools
+from json import loads as json_load
+from itertools import repeat
+from zlib import crc32 as zlib_crc32
 
 we_have_logging = False
 
@@ -28,7 +31,7 @@ except ImportError:
 BRCI_VERSION: str = "D15"  # D(...) is basically 4.(...)
 
 # Paths
-_CWD: str = os.path.dirname(os.path.realpath(__file__))
+BRCI_CWD: str = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 _LOCALAPPDATA: str = os.getenv("LOCALAPPDATA")
 
 if os.name == 'nt':
@@ -43,14 +46,13 @@ else:
         os.path.expanduser(f"~/.local/share/Steam/steamapps/compatdata/552100/pfx/drive_c/users/steamuser/AppData/Local/BrickRigs/SavedRemastered/Vehicles")
     ]
 
-PROJECT_FOLDER: str = os.path.join(_CWD, 'Projects')
-BACKUP_FOLDER: str = os.path.join(_CWD, 'Backups')
+PROJECT_FOLDER: str = os.path.join(BRCI_CWD, 'Projects')
+BACKUP_FOLDER: str = os.path.join(BRCI_CWD, 'Backups')
 
-NO_THUMBNAIL: str = os.path.join(_CWD, 'resources', 'no_thumbnail.png')
-BRCI_THUMBNAIL: str = os.path.join(_CWD, 'resources', 'brci.png')
-BLANK_THUMBNAIL: str = os.path.join(_CWD, 'resources', 'blank.png')
-MISSING_THUMBNAIL: str = os.path.join(_CWD, 'resources', 'missing_thumbnail.png')  # TODO: add this image (i'll take care of it since I got brmk, -perru)
-
+NO_THUMBNAIL: str = os.path.join(BRCI_CWD, 'resources', 'no_thumbnail.png')
+BRCI_THUMBNAIL: str = os.path.join(BRCI_CWD, 'resources', 'brci.png')
+BLANK_THUMBNAIL: str = os.path.join(BRCI_CWD, 'resources', 'blank.png')
+MISSING_THUMBNAIL: str = os.path.join(BRCI_CWD, 'resources', 'missing_thumbnail.png')
 
 # Settings
 settings: dict[str, Any] = {
@@ -283,6 +285,55 @@ def printr(*args, end: str = "\n", sep: str = " ", clear: str = FM.CLEAR_ALL, **
     return repr(return_str.strip())[1:-1] # sanitization: do not keep color codes in the return string
 
 
+# --------------------    FONT    -------------------- #
+
+
+with open(os.path.join(BRCI_CWD, 'resources', 'font.json'), 'r') as f:
+    raw_font: dict[str, dict | list] = json_load(f.read())
+
+_font_colors = raw_font.pop('colors')
+true_font: dict[str, list[list[ list[int] ]] ] = {k: [[ _font_colors[char] for char in s] for s in a] for k, a in raw_font.items()}
+
+
+def generate_text_bitmap(text: str, size_x: int = 256, size_y: int = 256, scale: int = 3) -> list[list[ list[int] ]]:
+
+    position: int = 2 * scale
+    text_height: int = 10 * scale
+    lines: list[list[ list[int] ]] = [[_font_colors[' ']] * position for _ in range(text_height)]
+    right_padding: int = position # = 2 * padding. micro optimisation goes brrr
+    is_auto_new_line: bool = False
+    for char in text:
+        if is_auto_new_line and char == ' ':
+            continue
+        else:
+            is_auto_new_line = False
+        printed_char: list[list[ list[int] ]] = [[pixel for pixel in line for _ in range(scale)] for line in true_font[char] for _ in range(scale)] if char in true_font else true_font['none']
+        if char == '\n' or position + len(printed_char[0]) > size_x - right_padding:
+            for i in range(text_height):
+                lines[-text_height + i].extend([_font_colors[' ']] * (size_x - len(lines[-text_height + i])))
+            position = 2 * scale
+            lines.extend([[_font_colors[' ']] * position for _ in range(text_height)])
+            if char == ' ':
+                is_auto_new_line = True
+                continue
+            if char == '\n':
+                continue
+        for i, line in enumerate(printed_char):
+            lines[-text_height + i].extend(line)
+        position += len(printed_char[0])
+    for i in range(text_height):
+        lines[-text_height + i].extend([_font_colors[' ']] * (size_x - len(lines[-text_height + i])))
+
+    if len(lines) > size_y:
+        return lines[:size_y]
+    # else:
+    lines.extend([[_font_colors[' ']] * size_x] * (size_y - len(lines)))
+    return lines
+
+def crc32(data):
+    return zlib_crc32(data) & 0xffffffff
+
+
 # --------------------    LOGGING    -------------------- #
 
 
@@ -367,7 +418,7 @@ def is_valid_folder_name(name: str, is_nt: bool) -> bool:
         #if name in (
         #        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
         #        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"): print("fuck you banned strs")
-        # Making these lines comments because I felt like it, and because it was a massive block of neon green string text for me. :bob_troll:
+        # Making these lines comments because I felt like it, and because it was a massive block of neon green string text for me :bob_troll:
         
         bad_folder_names = ("CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3",
                 "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7",
@@ -385,7 +436,7 @@ def is_valid_folder_name(name: str, is_nt: bool) -> bool:
             # This name is invalid. Return False.
             logwrap("warning", f"NT directory name check *failed*. Dirname: {name}")
             # If you have an issue with logs being here, let me know. These will help with debugging.
-            # If you want to disable logs in random areas like these ones, they're usually set to debug, just set the logger to a higher level to filter them out.
+            # If you want to disable logs in random areas like these, they're usually set to debug, just set the logger to a higher level to filter them out.
             return False
         else:
             # Once again, let me know.

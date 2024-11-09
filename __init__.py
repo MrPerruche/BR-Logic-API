@@ -73,9 +73,9 @@ An example of using BRCI::
 
 from .src.brci_class import *
 from .src.property_utils import *
+import os.path
 # from brci.src.brick import *  # import from .brci_class
 # from brci..utils import *  # import from .brci_class
-
 
 # Probably okay to close the logging file.
 file_handler.close()

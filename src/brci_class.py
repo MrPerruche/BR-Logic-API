@@ -6,6 +6,7 @@ from .utils import *
 from .write_utils import *
 from .write_utils import _convert_brick_names_to_id, _convert_brick_types, _get_property_data, _get_prop_bin
 from datetime import datetime
+from zlib import compress as zlib_compress
 # import os.path -> from .utils
 # from typing import Self -> from .brick
 # from typing import Final -> from .utils
@@ -550,6 +551,69 @@ class Creation14:
 
         with open(os.path.join(self.project_dir, self.project_name, file_name), 'wb') as f:
             f.write(image)
+
+        return self
+
+
+    def create_preview(self, bitmap_image: list[list[list[int]]], file_name: str = 'Preview.png', exist_ok: bool = True) -> Self:
+
+        # TODO DOCSTRING
+
+        # VERIFICATIONS
+
+        # TODO CHECK FOR PATH & NAME VALIDITY
+
+        if not exist_ok and os.path.exists(os.path.join(self.project_dir, self.project_name, file_name)):
+
+            FM.error("Invalid path",
+                     f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
+                     f"A such named file cannot be created.")
+
+            logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
+                    f"Creation14::write_creation || Bad project name (Already exists)!: {self.project_name} (Error mitigation is set to {settings['attempt_error_mitigation']})")
+
+            if settings['attempt_error_mitigation']:
+                FM.success("Cancelling creation file creation")
+                logwrap("info", f"Creation14::write_creation || Cancelled creation file creation.")
+            else:
+                raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
+
+
+        # GENERATION
+
+        height = len(bitmap_image)
+        width = len(bitmap_image[0])
+
+        pixels_list: list[list[int]] = [pixel for row in bitmap_image for pixel in row]
+
+        header = b'\x89PNG\r\n\x1a\n'
+
+        # IHDR chunk
+        ihdr_data = struct_pack('>IIBBIB', width, height, 8, 6, 0, 0)
+        ihdr_chunk = b'IHDR' + ihdr_data
+        ihdr_crc = struct_pack('>I', crc32(b'IHDR' + ihdr_data))
+
+        # IDAT chunk (compressed RGBA data)
+        # Flatten the RGBA data into a byte string and add the filter byte for each row
+        raw_data = b''.join(
+            [b'\x00' + bytes([channel for pixel in pixels_list[y * width:(y + 1) * width] for channel in pixel]) for y in range(height)]
+        )
+
+        # Compress the raw image data using zlib (deflate)
+        compressed_data = zlib_compress(raw_data)
+        idat_chunk = b'IDAT' + compressed_data
+        idat_crc = struct_pack('>I', crc32(b'IDAT' + compressed_data))
+
+        # IEND chunk (empty chunk)
+        iend_chunk = b'IEND' + b'\x00\x00\x00\x00'
+
+        # Writing to file
+        os.makedirs(os.path.join(self.project_dir, self.project_name), exist_ok=True)
+        with open(os.path.join(self.project_dir, self.project_name, file_name), 'wb') as f:
+            f.write(header)
+            f.write(struct_pack('>I', len(ihdr_data)) + ihdr_chunk + ihdr_crc)
+            f.write(struct_pack('>I', len(compressed_data)) + idat_chunk + idat_crc)
+            f.write(struct_pack('>I', len(iend_chunk)) + iend_chunk)
 
         return self
 
