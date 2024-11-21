@@ -11,58 +11,112 @@ class Units:
     """
     Units class for BRCI-D.
 
-    :var UE_UNIT: Length unit used in Unreal Engine. (0.01m)
-    :var THIRD, STUD: Length of a third of a brick (0.1m)
-    :var BRICK: Length of a brick (0.3m)
+    Variables:
+        UE_UNIT (Final[float]): Length unit used in Unreal Engine. (0.01m)
+        THIRD, STUD, SUB_UNIT (Final[float]): Length of a third of a brick (0.1m)
+        BRICK, UNIT (Final[float]): Length of a brick (0.3m)
 
-    :var KILOMETER, KM: (1_000m)
-    :var HECTOMETER, HM: (100m)
-    :var DECAMETER, DAM: (10m)
-    :var METER, M: (1m)
-    :var DECIMETER, DM: (0.1m)
-    :var CENTIMETER, CM: (0.01m)
-    :var MILLIMETER, MM: (0.001m)
-    :var MICROMETER, UM: (0.000_001m)
+        QUETTA (float): Metric prefix adopted in 2022. (×10^30)
+        RONNA (float): Metric prefix adopted in 2022. (×10^27)
+        YOTTA (float): Metric prefix adopted in 1991. (×10^24)
+        ZETTA (float): Metric prefix adopted in 1991. (×10^21)
+        EXA (float): Metric prefix adopted in 1975. (×10^18)
+        PETA (float): Metric prefix adopted in 1975. (×10^15)
+        TERA (float): Metric prefix adopted in 1960. (×10^12)
+        GIGA (float): Metric prefix adopted in 1960. (×10^9)
+        MEGA (float): Metric prefix adopted in 1873. (×10^6)
+        KILO (float): Metric prefix adopted in 1795. (×10^3)
+        HECTO (float): Metric prefix adopted in 1795. (×10^2)
+        DECA (float): Metric prefix adopted in 1795. (×10^1)
+        DECI (float): Metric prefix adopted in 1795. (×10^-1)
+        CENTI (float): Metric prefix adopted in 1795. (×10^-2)
+        MILLI (float): Metric prefix adopted in 1795. (×10^-3)
+        MICRO (float): Metric prefix adopted in 1873. (×10^-6)
+        NANO (float): Metric prefix adopted in 1960. (×10^-9)
+        PICO (float): Metric prefix adopted in 1960. (×10^-12)
+        FEMTO (float): Metric prefix adopted in 1964. (×10^-15)
+        ATTO (float): Metric prefix adopted in 1964. (×10^-18)
+        ZEPTO (float): Metric prefix adopted in 1991. (×10^-21)
+        YOCTO (float): Metric prefix adopted in 1991. (×10^-24)
+        RONTO (float): Metric prefix adopted in 2022. (×10^-27)
+        QUECTO (float): Metric prefix adopted in 2022. (×10^-30)
 
-    :var LEAGUE, LEA: (4_828.032m)
-    :var NAUTICAL_MILE, NMI: (1_852m)
-    :var MILE, MI: (1_609.344m)
-    :var FURLONG, FUR: (201.168m)
-    :var CABLE: (185.2m)
-    :var CHAIN, CH: (20.116_8m)
-    :var ROD, POLE, PERCH: (5.029_2m)
-    :var FATHOM, FTH: (1.852m)
-    :var YARD, YD: (0.914_4m)
-    :var FOOT, FEET, FT: (0.304_8m)
-    :var LINK: (0.201_168m)
-    :var HAND, HH: (0.101_6m)
-    :var INCH, IN: (0.025_4m)
-    :var BARLEYCORN: (0.008_466_666_6...m)
-    :var FRENCH_PICA, CICERO: (0.004_511_658_1m)
-    :var AMERICAN_PICA: (0.004_217_416m)
-    :var COMPUTER_PICA, PICA: (0.004_233_333_3...m)
-    :var LINE, L: (0.002_166_666_6...m)
-    :var THOU, MIL, TH: (0.000_025_4m)
-    :var TWIP: (0.000_017_638_9m)
+        KILOMETER, KM (float): A thousand meters. (1_000m)
+        HECTOMETER, HM (float): A hundred meters. (100m)
+        DECAMETER, DAM (float): Ten meters. (10m)
+        METER, M (float): Defined as the distance light travels in 1/299_792_458 of a second. (1m)
+        DECIMETER, DM (float): A tenth of a meter. (0.1m)
+        CENTIMETER, CM (float): A centimeter. (0.01m)
+        MILLIMETER, MM (float): A millimeter. (0.001m)
+        MICROMETER, UM (float): A micrometer. (0.000_001m)
 
-    :var PARSEC, PC: (30_856_775_814_913_673m)
-    :var LIGHT_YEAR, LY: (9_460_730_472_580_800m)
-    :var LIGHT_DAY, LD: (259_020_683_712_000m)
-    :var LIGHT_HOUR, LH: (10_792_528_488_000m)
-    :var ASTRONOMICAL_UNIT, AU: (149_597_870_700m)
-    :var LIGHT_MINUTE, LM: (179_875_474_800m)
-    :var LIGHT_SECOND, LS: (299_792_458m)
-    :var LIGHT_MILLISECOND, LMS: (299_792.458m)
-    :var LIGHT_MICROSECOND, LUS: (299.792_458m)
-    :var LIGHT_NANOSECOND, LNS: (0.299_792_458m)
-    :var LIGHT_PICOSECOND, LPS: (0.000_299_792_458m)
+        LEAGUE, LEA (float): (4_828.032m)
+        NAUTICAL_MILE, NMI (float): (1_852m)
+        MILE, MI (float): (1_609.344m)
+        FURLONG, FUR (float): (201.168m)
+        CABLE (float): (185.2m)
+        CHAIN, CH (float): (20.116_8m)
+        ROD, POLE, PERCH (float): (5.029_2m)
+        FATHOM, FTH (float): (1.852m)
+        YARD, YD (float): (0.914_4m)
+        FOOT, FEET, FT (float): (0.304_8m)
+        LINK (float): (0.201_168m)
+        HAND, HH (float): (0.101_6m)
+        INCH, IN (float): (0.025_4m)
+        BARLEYCORN (float): (0.008_466_666_6...m)
+        FRENCH_PICA, CICERO (float): (0.004_511_658_1m)
+        AMERICAN_PICA (float): (0.004_217_416m)
+        COMPUTER_PICA, PICA (float): (0.004_233_333_3...m)
+        LINE, L (float): (0.002_166_666_6...m)
+        THOU, MIL, TH (float): (0.000_025_4m)
+        TWIP (float): (0.000_017_638_9m)
+
+        :var PARSEC, PC: (30_856_775_814_913_673m)
+        :var LIGHT_YEAR, LY: (9_460_730_472_580_800m)
+        :var LIGHT_DAY, LD: (259_020_683_712_000m)
+        :var LIGHT_HOUR, LH: (10_792_528_488_000m)
+        :var ASTRONOMICAL_UNIT, AU: (149_597_870_700m)
+        :var LIGHT_MINUTE, LM: (179_875_474_800m)
+        :var LIGHT_SECOND, LS: (299_792_458m)
+        :var LIGHT_MILLISECOND, LMS: (299_792.458m)
+        :var LIGHT_MICROSECOND, LUS: (299.792_458m)
+        :var LIGHT_NANOSECOND, LNS: (0.299_792_458m)
+        :var LIGHT_PICOSECOND, LPS: (0.000_299_792_458m)
     """
+
+    # Metric Prefixes
+    QUETTA: Final[float] = 1e30
+    RONNA: Final[float] = 1e27
+    YOTTA: Final[float] = 1e24
+    ZETTA: Final[float] = 1e21
+    EXA: Final[float] = 1e18
+    PETA: Final[float] = 1e15
+    TERA: Final[float] = 1e12
+    GIGA: Final[float] = 1e9
+    MEGA: Final[float] = 1e6
+    KILO: Final[float] = 1e3
+    HECTO: Final[float] = 100
+    DECA: Final[float] = 10
+    DECI: Final[float] = 0.1
+    CENTI: Final[float] = 0.01
+    MILLI: Final[float] = 1e-3
+    MICRO: Final[float] = 1e-6
+    NANO: Final[float] = 1e-9
+    PICO: Final[float] = 1e-12
+    FEMTO: Final[float] = 1e-15
+    ATTO: Final[float] = 1e-18
+    ZEPTO: Final[float] = 1e-21
+    YOCTO: Final[float] = 1e-24
+    RONTO: Final[float] = 1e-27
+    QUECTO: Final[float] = 1e-30
+
 
     # Brick rigs & Unreal Engine
     UE_UNIT: Final[float] = 0.01
     THIRD: Final[float] = 0.1
-    STUD = THIRD
+    SUB_UNIT = STUD = THIRD
     BRICK: Final[float] = 0.3
+    UNIT = BRICK
 
     # Metric & SI-Related
     KILOMETER: Final[float] = 1_000.0
@@ -147,53 +201,38 @@ class Units:
 def convert_len(value: float | int | list[float | int], old_unit: float | int, new_unit: float | int) -> float | list[float]:
 
     """
-    Convert a value or list of values from one unit to another.
+    Convert a value or list of values from one unit to another. Both unit arguments must be use the same unit.
 
-    :param value:
-    :param old_unit:
-    :param new_unit:
-    :return:
+    Arguments:
+        value: Value or list of values to convert.
+        old_unit: Old unit.
+        new_unit: New unit.
+
+    Returns:
+        float | int | list[float | int]: Converted value(s)
+
+    Exceptions:
+        TypeError: If one of the arguments is of an unexpected type.
     """
 
 
     # Need to import it each time to update it
 
+    if type(value) in (list, tuple, set, frozenset) and {type(v) for v in value} - {float, int} != set():
 
-    # Check if old_unit is a float or int
-    if not isinstance(old_unit, (float, int)):
+        raise TypeError("Value must be a float, int or list of floats and ints.")
 
-        # Signal there's something wrong
-        FM.error("Old unit must be a float or int.", "Old unit must be a float or int, being how many "
-                 f"meters one of the unit is. \nOld unit is set to: {old_unit!r} (type: {type(old_unit).__name__}).")
+    elif type(value) not in (float, int):
 
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                old_unit = float(old_unit)
-                FM.success(f"Old unit was interpreted as: {old_unit!r} (type: {type(old_unit).__name__})")
-            except ValueError:
-                raise ValueError(f"Old unit must be a float or int. Error mitigation failed.")
+        raise TypeError("Value must be a float, int or list of floats and ints.")
 
-        else:
-            raise ValueError("Old unit must be a float or int.")
+    if not type(old_unit) in (float, int):
 
-    # Do the same for new_unit
-    if not isinstance(new_unit, (float, int)):
+        raise TypeError("Old unit must be a float or int.")
 
-        # Signal there's something wrong
-        FM.error("New unit must be a float or int.", "New unit must be a float or int, being how many "
-                 f"meters one of the unit is. \nNew unit is set to: {new_unit!r} (type: {type(new_unit).__name__}).")
+    if not type(new_unit) in (float, int):
 
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                new_unit = float(new_unit)
-                FM.success(f"New unit was interpreted as: {new_unit!r} (type: {type(new_unit).__name__})")
-            except ValueError:
-                raise ValueError(f"New unit must be a float or int. Error mitigation failed.")
-
-        else:
-            raise ValueError("New unit must be a float or int.")
+        raise TypeError("New unit must be a float or int.")
 
 
     # If it's a value we convert it to the new unit
@@ -201,12 +240,11 @@ def convert_len(value: float | int | list[float | int], old_unit: float | int, n
         return value / new_unit * old_unit
 
     # Else if it's a list we convert each value to the new unit
-    elif isinstance(value, list):
+    elif isinstance(value, (list, tuple, set, frozenset)):
         return [v / new_unit * old_unit for v in value]
 
     # else:
-    raise ValueError("Value must be a float, int or list of floats and ints." +
-                     (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+    raise TypeError("Converting provided value(s) failed unexpectedly.")
 
 
 # Function to calculate position of a brick from any unit
@@ -215,11 +253,15 @@ def pos(value: float | int | list[float | int], unit: float | int = Units.METER)
     """
     Function to convert position (or distance*) of a brick from any unit to the unit Brick Rigs use.
 
-    :param value: Value to convert.
-    :param unit: Old unit.
+    Arguments:
+        value: Value or list of values to convert.
+        unit: Unit of provided values.
 
-    :return: Converted value.
-    :rtype: float | list[float]
+    Returns:
+        Converted value.
+
+    Exceptions:
+        TypeError: If one of the arguments is of an unexpected type.
     """
 
     return convert_len(value, unit, Units.UE_UNIT)
@@ -229,13 +271,17 @@ def pos(value: float | int | list[float | int], unit: float | int = Units.METER)
 def size(brick_size: float | int | list[float | int], unit: float | int = Units.METER) -> float | list[float]:
 
     """
-    Function to convert size (or length*) of a brick from any unit to the unit Brick Rigs use.
+    Function to convert size of a brick from any unit to the unit Brick Rigs use.
 
-    :param brick_size: Value to convert.
-    :param unit: Old unit.
+    Arguments:
+        brick_size: Value or list of values to convert.
+        unit: Unit of provided values.
 
-    :return: Converted value.
-    :rtype: float | list[float]
+    Returns:
+        Converted value.
+
+    Exceptions:
+        TypeError: If one of the arguments is of an unexpected type.
     """
 
     return convert_len(brick_size, unit, Units.THIRD)
@@ -243,27 +289,29 @@ def size(brick_size: float | int | list[float | int], unit: float | int = Units.
 
 # -------------------- COLORS --------------------
 
-_SUPPORTED_COLOR_SPACES: Final[set[str]] = {'rgb', 'hsl', 'hsv', 'cmyk'}
+SUPPORTED_COLOR_SPACES: Final[set[str]] = {'rgb', 'hsl', 'hsv', 'cmyk'}
 
 def convert_color(color: list[float | int] | tuple[float | int, ...],
                   color_space: Literal['rgb', 'hsl', 'hsv', 'cmyk'], new_color_space: Literal['rgb', 'hsl', 'hsv', 'cmyk'],
                   alpha: bool, old_max: float | int = 255.0, new_max: float | int = 255.0) -> list[int]:
 
-
-    # Need to import it each time to update it
-
-
     """
     Convert color from a color space to another
 
-    :param color: List of each channel of the RGB(A) color.
-    :param color_space: Color space of the color. Either 'rgb', 'hsl', 'hsv', or 'cmyk'.
-    :param new_color_space: Color space of the new color. Either 'rgb', 'hsl', 'hsv', or 'cmyk'.
-    :param alpha: Whether the color has an additional alpha channel
-    :param old_max: Maximum value of the given color. old_max = 123 -> e.g. white -> [123, 123, 123] / [123, 123, 123, 123]
-    :param new_max: Maximum value of the new color. new_max = 123 -> e.g. white -> [123, 123, 123] / [123, 123, 123, 123]
+    Arguments:
+        color (list[float | int] | tuple[float | int, ...]): List of each channel of the color.
+        color_space (Literal['rgb', 'hsl', 'hsv', 'cmyk']): Color space of the color.
+        new_color_space (Literal['rgb', 'hsl', 'hsv', 'cmyk']): Color space of the new color.
+        alpha (bool): Whether the color has an additional alpha channel
+        old_max (float | int): Maximum value of the given color. old_max = 123 -> e.g. white -> [123, 123, 123] / [123, 123, 123, 123]
+        new_max (float | int): Maximum value of the new color. new_max = 123 -> e.g. white -> [123, 123, 123] / [123, 123, 123, 123]
 
-    :return: Color converted to the new color space
+    Returns:
+        Color converted to the new color space.
+
+    Exceptions:
+        TypeError: If one of the arguments is of an unexpected type.
+        ValueError: If the color space or new color space is not supported.
     """
 
 
@@ -271,155 +319,41 @@ def convert_color(color: list[float | int] | tuple[float | int, ...],
 
     # Check if color is right
     # Is a list
-    if not isinstance(color, (list, tuple)):
-
-        # Signal there's something wrong
-        FM.error("Color must be a list.",
-                 f"Color must be a list of floats or ints. \nColor is set to: {color!r} (type: {type(color).__name__}).")
-
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                color = tuple(color)
-                FM.success(f"Color was interpreted as: {color!r} (type: {type(color).__name__})")
-            except ValueError:
-                raise ValueError(f"Color must be a list. Error mitigation failed.")
-
-        else:
-            raise ValueError("Color must be a list.")
+    if not type(color) in (list, tuple):
+        raise TypeError("Color must be a list.")
 
     # If color is of the right length
     if len(color) != len(color_space) + alpha:
 
-        # Signal there's something wrong
-        FM.error(f"Colors in {color_space + ('(a)' if alpha else '')} must be a list of length {len(color_space) + alpha}.",
-                 f"Color must be a list of floats or ints. \nColor is set to: {color!r} (type: {type(color).__name__}).")
-
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                # Adjust color to be of the right length
-                color = color[:len(color_space) + alpha]
-                color = color + [0.0] * ((len(color_space) + alpha) - len(color))
-
-                FM.success(f"Color was interpreted as: {color!r} (type: {type(color).__name__})")
-            except ValueError:
-                raise ValueError(f"Color must be a list of length 3 or 4. Error mitigation failed.")
-
-        else:
-            raise ValueError("Color must be a list of length 3 or 4.")
+        raise TypeError("Color must be a list of length 3 or 4.")
 
     # Is all floats or integers
-    if not all(isinstance(v, (float, int)) for v in color):
+    if not all(type(v) in (float, int) for v in color):
 
-        # Signal there's something wrong
-        FM.error("Color must be a list of floats or ints.",
-                 f"Color must be a list of floats or ints. \nColor is set to: {color!r} (type: {type(color).__name__}).")
-
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                color = [float(v) for v in color]
-                FM.success(f"Color was interpreted as: {color!r} (type: {type(color).__name__})")
-            except ValueError:
-                raise ValueError(f"Color must be a list of floats or ints. Error mitigation failed.")
-
-        else:
-            raise ValueError("Color must be a list of floats or ints.")
+        raise TypeError("Color must be a list of floats or integers.")
 
 
     # Check if color spaces are right
-    if color_space not in _SUPPORTED_COLOR_SPACES:
+    if color_space not in SUPPORTED_COLOR_SPACES:
 
-        # Signal there's something wrong
-        FM.error(f"Non supported color space: {color_space!r}.",
-                 f"Color space must be one of {', '.join([repr(space) for space in _SUPPORTED_COLOR_SPACES])}.\n"
-                 f"Color space is set to: {color_space!r} (type: {type(color_space).__name__}).")
+        raise ValueError(f"Color space must be one of {', '.join([repr(space) for space in SUPPORTED_COLOR_SPACES])}.")
 
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                color_space = color_space[:-1]
-                if color_space in _SUPPORTED_COLOR_SPACES:
-                    FM.success(f"Color space was interpreted as: {color_space!r} (type: {type(color_space).__name__})")
-                else: raise ValueError
-            except ValueError:
-                raise ValueError(f'Non supported color space: {color_space!r}. Error mitigation failed.')
+    if new_color_space not in SUPPORTED_COLOR_SPACES:
 
-        else:
-            raise ValueError(f'Non supported color space: {color_space!r}.')
-
-    if new_color_space not in _SUPPORTED_COLOR_SPACES:
-
-        # Signal there's something wrong
-        FM.error(f"Non supported color space: {new_color_space!r}.",
-                 f"Color space must be one of {', '.join([repr(space) for space in _SUPPORTED_COLOR_SPACES])}.\n"
-                 f"Color space is set to: {new_color_space!r} (type: {type(new_color_space).__name__}).")
-
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                new_color_space = new_color_space[:-1]
-                if new_color_space in _SUPPORTED_COLOR_SPACES:
-                    FM.success(f"Color space was interpreted as: {new_color_space!r} (type: {type(new_color_space).__name__})")
-                else: raise ValueError
-            except ValueError:
-                raise ValueError(f'Non supported color space: {new_color_space!r}. Error mitigation failed.')
-
-        else:
-            raise ValueError(f'Non supported color space: {new_color_space!r}.')
+        raise ValueError(f"New color space must be one of {', '.join([repr(space) for space in SUPPORTED_COLOR_SPACES])}.")
 
     # Check if alpha and max parameters have teh right type (bool, float | int, float | int)
-    if not isinstance(alpha, bool):
+    if not type(alpha) == bool:
 
-        # Signal there's something wrong
-        FM.error("Alpha must be a boolean.",
-                 f"Alpha is set to: {alpha!r} (type: {type(alpha).__name__}).")
+        raise TypeError("Alpha must be a boolean.")
 
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                alpha = bool(alpha)
-                FM.success(f"Alpha was interpreted as: {alpha!r} (type: {type(alpha).__name__})")
-            except ValueError:
-                raise ValueError(f"Alpha must be a boolean. Error mitigation failed.")
+    if not type(old_max) in (float, int):
 
-        else:
-            raise ValueError("Alpha must be a boolean.")
+        raise TypeError("Old max must be a float or int.")
 
-    if not isinstance(old_max, (float, int)):
+    if not type(new_max) in (float, int):
 
-        # Signal there's something wrong
-        FM.error("Old max must be a float or int.",
-                 f"Old max is set to: {old_max!r} (type: {type(old_max).__name__}).")
-
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                old_max = float(old_max)
-                FM.success(f"Old max was interpreted as: {old_max!r} (type: {type(old_max).__name__})")
-            except ValueError:
-                raise ValueError(f"Old max must be a float or int. Error mitigation failed.")
-
-        else:
-            raise ValueError("Old max must be a float or int.")
-
-    if not isinstance(new_max, (float, int)):
-
-        # Signal there's something wrong
-        FM.error("New max must be a float or int.",
-                 f"New max is set to: {new_max!r} (type: {type(new_max).__name__}).")
-
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                new_max = float(new_max)
-                FM.success(f"New max was interpreted as: {new_max!r} (type: {type(new_max).__name__})")
-            except ValueError:
-                raise ValueError(f"New max must be a float or int. Error mitigation failed.")
-
-        else:
-            raise ValueError("New max must be a float or int.")
+        raise TypeError("New max must be a float or int.")
 
 
     # ----- CONVERTING COLOR
@@ -508,10 +442,16 @@ def rgb(color: list[float | int], old_max: float = 255.0) -> list[int]:
     """
     Convert from RGB(A) (depending on the length of the list) to HSV(A) (which Brick Rigs uses for colors)
 
-    :param color: List of each channel of the RGB(A) color.
-    :param old_max: Maximum value of the RGB(A) color. old_max = 123 -> e.g. white -> [123, 123, 123] / [123, 123, 123, 123]
+    Arguments:
+        color (list[float | int]): List of each channel of the RGB(A) color.
+        old_max (float | int): Maximum value of the RGB(A) color. old_max = 123 -> e.g. white -> [123, 123, 123] / [123, 123, 123, 123]
 
-    :return: List of each channel of the HSV(A) color.
+    Returns:
+        list[int]: List of each channel of the HSV(A) color.
+
+    Exceptions:
+        TypeError: If one of the arguments is of an unexpected type.
+        ValueError: If the color space or new color space is not supported.
     """
 
     alpha: bool = False
@@ -524,54 +464,35 @@ def rgb(color: list[float | int], old_max: float = 255.0) -> list[int]:
 def hsv(color: list[float | int], old_max: float = 255.0) -> list[int]:
 
 
-    # Need to import it each time to update it
+    """
+    Convert from HSV(A) (depending on the length of the list) to RGB(A) (which Brick Rigs uses for colors)
+
+    Arguments:
+        color (list[float | int]): List of each channel of the HSV(A) color.
+        old_max (float | int): Maximum value of the HSV(A) color. old_max = 123 -> e.g. white -> [123, 123, 123] / [123, 123, 123, 123]
+
+    Returns:
+        list[int]: List of each channel of the RGB(A) color.
+
+    Exceptions:
+        TypeError: If one of the arguments is of an unexpected type.
+        ValueError: If the color space or new color space is not supported or one of the lists are of incorrect length.
+    """
 
 
-    if not isinstance(color, list):
+    if not type(color) == list:
 
-        # Signal there's something wrong
-        FM.error("Color must be a list.",
-                 f"Color is: {color!r} (type: {type(color).__name__}).")
-
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                color = list(color)
-                FM.success(f"Color was interpreted as: {color!r} (type: {type(color).__name__})")
-            except ValueError:
-                raise ValueError(f"Color must be a list. Error mitigation failed.")
-
-        else:
-            raise ValueError("Color must be a list.")
+        raise TypeError("Color must be a list.")
 
 
     if not 3 < len(color) <= 4:
 
-        # Signal there's something wrong
-        FM.error("Color must be a list of 3 or 4 floats or integers.",
-                 f"Color is: {color!r} (type: {type(color).__name__}).")
-
-        # Error mitigation is impossible
-        raise ValueError("Color must be a list of 3 or 4 elements." +
-                         (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+        raise ValueError("Color must be a list of 3 or 4 elements.")
 
 
-    if not all(isinstance(col, (float, int)) for col in color):
+    if not all(type(col) in (float, int) for col in color):
 
-        # Signal there's something wrong
-        FM.error("Color must be a list of 3 or 4 floats or integers.",
-                 f"Color is: {color!r} (type: {type(color).__name__}).")
-
-        # See if we can fix the issue (if the user wants to)
-        if settings['attempt_error_mitigation']:
-            try:
-                color = [float(col) for col in color]
-                FM.success(f"Color was interpreted as: {color!r} (type: {type(color).__name__})")
-            except ValueError:
-                raise ValueError(f"Color must be a list of 3 or 4 floats or integers. Error mitigation failed.")
-
-        else:
-            raise ValueError("Color must be a list of 3 or 4 floats or integers.")
+        raise ValueError("Color must be a list of 3 or 4 floats or integers.")
 
 
     return [int(col / old_max * 255) for col in color]
@@ -582,10 +503,16 @@ def hsl(color: list[float | int], old_max: float = 255.0) -> list[int]:
     """
     Convert from HSL(A) (depending on the length of the list) to HSV(A) (which Brick Rigs uses for colors)
 
-    :param color: List of each channel of the HSL(A) color.
-    :param old_max: Maximum value of the HSL(A) color. old_max = 123 -> e.g. white -> [0, 0, 123] / [0, 0, 123, 123]
+    Arguments:
+        color (list[float | int]): List of each channel of the RGB(A) color.
+        old_max (float | int): Maximum value of the RGB(A) color. old_max = 123 -> e.g. white -> [123, 123, 123] / [123, 123, 123, 123]
 
-    :return: List of each channel of the HSV(A) color.
+    Returns:
+        list[int]: List of each channel of the HSV(A) color.
+
+    Exceptions:
+        TypeError: If one of the arguments is of an unexpected type.
+        ValueError: If the color space or new color space is not supported.
     """
 
     alpha: bool = False
@@ -600,10 +527,16 @@ def cmyk(color: list[float | int], old_max: float = 255.0) -> list[int]:
     """
     Convert from CMYK(A) (depending on the length of the list) to HSV(A) (which Brick Rigs uses for colors)
 
-    :param color: List of each channel of the CMYK(A) color.
-    :param old_max: Maximum value of the CMYK(A) color. old_max = 123 -> e.g. black -> [0, 0, 0, 123] / [0, 0, 0, 123, 123]
+    Arguments:
+        color (list[float | int]): List of each channel of the CMYK(A) color.
+        old_max (float | int): Maximum value of the RGB(A) color. old_max = 123 -> e.g. white -> [123, 123, 123] / [123, 123, 123, 123]
 
-    :return: List of each channel of the HSV(A) color.
+    Returns:
+        list[int]: List of each channel of the CMYK(A) color.
+
+    Exceptions:
+        TypeError: If one of the arguments is of an unexpected type.
+        ValueError: If the color space or new color space is not supported.
     """
 
     alpha: bool = False
@@ -623,11 +556,14 @@ def brick_input14(prop_name: str, input_type: str, value: float | int = 1.0, sou
     Converts a list of arguments into a list of properties corresponding to brick inputs to provide similarity with BRCI-C.
     Same as `brci.BrickInput14()`
 
-    :param prop_name: Name of the property, e.g. `'EnabledInputChannel'`
-    :param input_type: Type of the input
-    :param value: Value of the input
-    :param source_bricks: List of source bricks
-    :return: List of properties
+    Arguments:
+        prop_name (str): Name of the property. e.g. `'EnabledInputChannel'`
+        input_type (str): Type of the input.
+        value (float | int): Value of the input.
+        source_bricks (list[str]): List of source bricks.
+
+    Returns:
+        dict[str, float | int | list[str]]: List of properties.
     """
 
     return {
@@ -640,5 +576,19 @@ def brick_input14(prop_name: str, input_type: str, value: float | int = 1.0, sou
 # Since BrickInput() originates from a class:
 #noinspection PyPep8Naming
 def BrickInput14(prop_name: str, input_type: str, value: float | int = 1.0, source_bricks: Optional[list[str]] = None) -> dict[str, float | int | list[str]]:
+
+    """
+    Converts a list of arguments into a list of properties corresponding to brick inputs to provide similarity with BRCI-C.
+    Duplicate of `brci.brick_input14()`
+
+    Arguments:
+        prop_name (str): Name of the property. e.g. `'EnabledInputChannel'`
+        input_type (str): Type of the input.
+        value (float | int): Value of the input.
+        source_bricks (list[str]): List of source bricks.
+
+    Returns:
+        dict[str, float | int | list[str]]: List of properties.
+    """
 
     return brick_input14(prop_name, input_type, value, source_bricks)

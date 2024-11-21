@@ -8,6 +8,8 @@ import functools
 from json import loads as json_load
 from itertools import repeat
 from zlib import crc32 as zlib_crc32
+from .exceptions import *
+from copy import deepcopy
 
 we_have_logging = False
 
@@ -28,8 +30,7 @@ except ImportError:
 # -------------------- DATA --------------------
 
 # Version
-BRCI_VERSION: str = "D16"  # D(...) is basically 4.(...)
-
+BRCI_VERSION: str = "4.17.0"
 # Paths
 BRCI_CWD: str = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 _LOCALAPPDATA: str = os.getenv("LOCALAPPDATA")
@@ -57,7 +58,6 @@ MISSING_THUMBNAIL: str = os.path.join(BRCI_CWD, 'resources', 'missing_thumbnail.
 # Settings
 settings: dict[str, Any] = {
     'show_logs': True,
-    'attempt_error_mitigation': True,
     'wip_features': False
 }
 
@@ -87,25 +87,30 @@ class Limits:
     """
     Class for holding integer and floating-point limits.
 
-    :var U8_MAX: Maximum unsigned 8-bit integer (255)
-    :var U16_MAX: Maximum unsigned 16-bit integer (65535)
-    :var U32_MAX: Maximum unsigned 32-bit integer (4294967295)
-    :var U64_MAX: Maximum unsigned 64-bit integer (18446744073709551615)
+    Variables:
+        U2_MAX (int): Maximum unsigned 2-bit integer (3)
+        U8_MAX (int): Maximum unsigned 8-bit integer (255)
+        U16_MAX (int): Maximum unsigned 16-bit integer (65535)
+        U32_MAX (int): Maximum unsigned 32-bit integer (4294967295)
+        U64_MAX (int): Maximum unsigned 64-bit integer (18446744073709551615)
 
-    :var I8_MAX: Maximum signed 8-bit integer (127)
-    :var I16_MAX: Maximum signed 16-bit integer (32767)
-    :var I32_MAX: Maximum signed 32-bit integer (2147483647)
-    :var I64_MAX: Maximum signed 64-bit integer (9223372036854775807)
+        I2_MAX (int): Maximum signed 2-bit integer (1)
+        I8_MAX (int): Maximum signed 8-bit integer (127)
+        I16_MAX (int): Maximum signed 16-bit integer (32767)
+        I32_MAX (int): Maximum signed 32-bit integer (2147483647)
+        I64_MAX (int): Maximum signed 64-bit integer (9223372036854775807)
 
-    :var U8_MIN: Minimum unsigned 8-bit integer (0)
-    :var U16_MIN: Minimum unsigned 16-bit integer (0)
-    :var U32_MIN: Minimum unsigned 32-bit integer (0)
-    :var U64_MIN: Minimum unsigned 64-bit integer (0)
+        U2_MIN (int): Minimum unsigned 2-bit integer (0)
+        U8_MIN (int): Minimum unsigned 8-bit integer (0)
+        U16_MIN (int): Minimum unsigned 16-bit integer (0)
+        U32_MIN (int): Minimum unsigned 32-bit integer (0)
+        U64_MIN (int): Minimum unsigned 64-bit integer (0)
 
-    :var I8_MIN: Minimum signed 8-bit integer (-128)
-    :var I16_MIN: Minimum signed 16-bit integer (-32768)
-    :var I32_MIN: Minimum signed 32-bit integer (-2147483648)
-    :var I64_MIN: Minimum signed 64-bit integer (-9223372036854775808)
+        I2_MIN (int): Minimum signed 2-bit integer (-2)
+        I8_MIN (int): Minimum signed 8-bit integer (-128)
+        I16_MIN (int): Minimum signed 16-bit integer (-32768)
+        I32_MIN (int): Minimum signed 32-bit integer (-2147483648)
+        I64_MIN (int): Minimum signed 64-bit integer (-9223372036854775808)
     """
 
     # Integer limits
@@ -145,16 +150,46 @@ class FM:
 
     """
     Class containing various formatting features.
+
+    Variables:
+        BLACK (Final[str]): ANSI escape code for black text
+        RED (Final[str]): ANSI escape code for red text
+        GREEN (Final[str]): ANSI escape code for green text
+        YELLOW (Final[str]): ANSI escape code for yellow text
+        BLUE (Final[str]): ANSI escape code for blue text
+        MAGENTA (Final[str]): ANSI escape code for magenta text
+        CYAN (Final[str]): ANSI escape code for cyan text
+        WHITE (Final[str]): ANSI escape code for white text
+        LIGHT_BLACK (Final[str]): ANSI escape code for light black (gray) text
+        LIGHT_RED (Final[str]): ANSI escape code for light red text
+        LIGHT_GREEN (Final[str]): ANSI escape code for light green text
+        LIGHT_YELLOW (Final[str]): ANSI escape code for light yellow text
+        LIGHT_BLUE (Final[str]): ANSI escape code for light blue text
+        LIGHT_MAGENTA (Final[str]): ANSI escape code for light magenta text
+        LIGHT_CYAN (Final[str]): ANSI escape code for light cyan text
+        LIGHT_WHITE (Final[str]): ANSI escape code for light white (bright white) text
+        BOLD (Final[str]): ANSI escape code for bold text
+        UNDERLINE (Final[str]): ANSI escape code for underlined text
+        ITALIC (Final[str]): ANSI escape code for italic text
+        REVERSE (Final[str]): ANSI escape code for reversed text
+        STRIKETHROUGH (Final[str]): ANSI escape code for strikethrough text
+        CLEAR_ALL (Final[str]): ANSI escape code for clearing all formatting
+        CLEAR_COLOR (Final[str]): ANSI escape code for clearing color formatting
+        CLEAR_BOLD (Final[str]): ANSI escape code for clearing bold formatting
+        CLEAR_UNDERLINE (Final[str]): ANSI escape code for clearing underlined formatting
+        CLEAR_ITALIC (Final[str]): ANSI escape code for clearing italic formatting
+        CLEAR_REVERSE (Final[str]): ANSI escape code for clearing reversed formatting
+        CLEAR_STRIKETHROUGH (Final[str]): ANSI escape code for clearing strikethrough formatting
     """
 
     BLACK: Final[str] = '\033[30m'
-    RED: Final[str] = '\033[91m'
-    GREEN: Final[str] = '\033[92m'
-    YELLOW: Final[str] = '\033[93m'
-    BLUE: Final[str] = '\033[94m'
-    MAGENTA: Final[str] = '\033[95m'
-    CYAN: Final[str] = '\033[96m'
-    WHITE: Final[str] = '\033[97m'
+    RED: Final[str] = '\033[31m'
+    GREEN: Final[str] = '\033[32m'
+    YELLOW: Final[str] = '\033[33m'
+    BLUE: Final[str] = '\033[34m'
+    MAGENTA: Final[str] = '\033[35m'
+    CYAN: Final[str] = '\033[36m'
+    WHITE: Final[str] = '\033[37m'
     LIGHT_BLACK: Final[str] = '\033[90m'
     LIGHT_RED: Final[str] = '\033[91m'
     LIGHT_GREEN: Final[str] = '\033[92m'
@@ -171,6 +206,7 @@ class FM:
     STRIKETHROUGH: Final[str] = '\033[9m'
 
     CLEAR_ALL: Final[str] = '\033[0m'
+    CLEAR_COLOR: Final[str] = '\033[39m'
     CLEAR_BOLD: Final[str] = '\033[22m'
     CLEAR_UNDERLINE: Final[str] = '\033[24m'
     CLEAR_ITALIC: Final[str] = '\033[23m'
@@ -184,12 +220,13 @@ class FM:
         """
         Will print an error message if show_logs is set to True.
 
-        :param message: Header of the error, reversed.
-        :param details: Details of the error, not reversed. If omitted (set to None), details will be omitted and the message will not be reversed.
-        :param force_print: Will print regardless of what show_logs is set to.
+        Arguments:
+            message (str): Header of the error.
+            details (Optional[str], optional): Details of the error, not reversed. If omitted (set to None), details will be omitted and the message will not be reversed.
+            force_print (bool, optional): Will print regardless of what show_logs is set to. Defaults to False.
 
-        :return: True if the message was printed, else False.
-        :rtype: bool
+        Returns:
+            bool: True if the message was printed, else False.
         """
 
         # Printing
@@ -212,14 +249,15 @@ class FM:
     def success(message: str, details: Optional[str] = None, force_print: bool = False) -> bool:
 
         """
-        Will print a warning message if show_logs is set to True.
+        Will print a success message if show_logs is set to True.
 
-        :param message: Header of the warning, reversed.
-        :param details: Details of the warning, not reversed. If omitted (set to None), details will be omitted and the message will not be reversed.
-        :param force_print: Will print regardless of what show_logs is set to.
+        Arguments:
+            message (str): Header of the success.
+            details (Optional[str], optional): Details of the success, not reversed. If omitted (set to None), details will be omitted and the message will not be reversed.
+            force_print (bool, optional): Will print regardless of what show_logs is set to. Defaults to False.
 
-        :return: True if the message was printed, else False.
-        :rtype: bool
+        Returns:
+            bool: True if the message was printed, else False.
         """
 
         if force_print or settings['show_logs']:
@@ -241,14 +279,15 @@ class FM:
     def warning(message: str, details: Optional[str] = None, force_print: bool = False) -> bool:
 
         """
-        Will print a success message if show_logs is set to True.
+        Will print a warning message if show_logs is set to True.
 
-        :param message: Header of the success, reversed.
-        :param details: Details of the success, not reversed. If omitted (set to None), details will be omitted and the message will not be reversed.
-        :param force_print: Will print regardless of what show_logs is set to.
+        Arguments:
+            message (str): Header of the warning.
+            details (Optional[str], optional): Details of the warning, not reversed. If omitted (set to None), details will be omitted and the message will not be reversed.
+            force_print (bool, optional): Will print regardless of what show_logs is set to. Defaults to False.
 
-        :return: True if the message was printed, else False.
-        :rtype: bool
+        Returns:
+            bool: True if the message was printed, else False.
         """
 
         if force_print or settings['show_logs']:
@@ -269,50 +308,119 @@ class FM:
 
     @staticmethod
     def add_color_aliases() -> None:
+        """
+        NOT RECOMMENDED.
+        Will add lowercase snake_case aliases to the FM class.
+        """
         for attribute_name in dir(FM):
-            if not attribute_name.startswith('_'):
+            if not attribute_name.startswith('_') and attribute_name.lower() in dir(FM):
                 setattr(FM, attribute_name.lower(), getattr(FM, attribute_name))
+
 
 # --------------------    COLOR ADDITIONS    -------------------- #
 
-def printr(*args, end: str = "\n", sep: str = " ", clear: str = FM.CLEAR_ALL, **kwargs) -> str:
+def printr(*args: object, end: str = '\n', sep: str = ' ', col: str = '', clear: str = FM.CLEAR_ALL, **kwargs) -> str:
 
-    """Print-Reset-Return. Resets color. Also, will return the text passed to it."""
+    """
+    Print-Reset-Return. Resets color after printing message.
 
-    printb(*args, end=f"{end}{clear}", sep=sep, **kwargs)
+    Arguments:
+        *args (tuple): Arguments to print.
+        end (str, optional): End of the print. Defaults to "\n".
+        sep (str, optional): Separator between arguments. Defaults to " ".
+        col (Optional[str], optional): Color to use. Defaults to None.
+        clear (str, optional): Color to clear. Defaults to FM.CLEAR_ALL.
+    """
+
+    printb(f"{col}{sep.join([str(arg) for arg in args])}", end=f"{end}{clear}", **kwargs)
 
     return_str = sep.join([str(arg) for arg in args])
-    return repr(return_str.strip())[1:-1] # sanitization: do not keep color codes in the return string
+    return repr(return_str.strip())[(0 if col else 1):-(1 if clear else 0)] # sanitization: do not keep color codes in the return string
 
 
 # --------------------    FONT    -------------------- #
 
+fonts: dict[ str, dict[str, list[list[ list[int] ]] ] ] = {}
+font_colors: dict[str, dict[str, list[int]]] = {}
 
-with open(os.path.join(BRCI_CWD, 'resources', 'font.json'), 'r') as f:
-    raw_font: dict[str, dict | list] = json_load(f.read())
+def load_font(json_font_path: str, font_name: str) -> None:
 
-_font_colors = raw_font.pop('colors')
-true_font: dict[str, list[list[ list[int] ]] ] = {k: [[ _font_colors[char] for char in s] for s in a] for k, a in raw_font.items()}
+    """
+    Will load a font from a json file. The json file must have the following structure:
+    {
+        "colors": {
+            " ": [<color for empty>],
+            "<character to replace>": [<r>, <g>, <b>],
+            ...
+        },
+        "none": [
+            "<pixels as characters for each line. They will be replaced with the color assigned to it in colors dict>",
+            ...
+        ],
+        "<glyph>": [
+            "<pixels as characters for each line. They will be replaced with the color assigned to it in colors dict>",
+            ...
+        ],
+        ...
+    }
+
+    Arguments:
+        json_font_path (str): Path to the json file.
+        font_name (str): Name of the font.
+
+    Exceptions:
+        JSONDecodeError: json file is invalid
+        FontError: If the json files' structure is invalid
+
+    """
+
+    global fonts, font_colors
+
+    with open(json_font_path, 'r') as f:
+        _current_font = json_load(f.read())
+
+    if 'colors' not in _current_font.keys():
+        raise FontError(f"Color mappings for json font not found when loading {font_name}.")
+
+    if 'none' not in _current_font.keys():
+        raise FontError(f"No glyph for unknown characters found when loading {font_name}.")
+
+    font_colors.update({font_name: _current_font.pop('colors')})
+    fonts.update({font_name: {k: [[ font_colors[font_name][char] for char in s] for s in a] for k, a in _current_font.items()}})
 
 
-def generate_text_bitmap(text: str, size_x: int = 256, size_y: int = 256, scale: int = 3) -> list[list[ list[int] ]]:
+load_font(os.path.join(BRCI_CWD, 'resources', 'font.json'), 'default')
 
+
+def generate_text_bitmap(text: str, size_x: int = 256, size_y: int = 256, scale: int = 3, background: Optional[list[int]] = None, font: str = 'default') -> list[list[ list[int] ]]:
+
+    """
+    Will convert text to a grid of RGBA values.
+    """
+
+    used_font: dict[str, list[list[ list[int] ]]] = fonts[font]
+    used_colors = {char: col.copy() for char, col in font_colors[font].items()}  # faster than deepcopy
+    if background is None:
+        background_col = font_colors[font][' ']
+    else:
+        background_col = background
+        used_colors[' '] = background
     position: int = 2 * scale
-    text_height: int = 10 * scale
-    lines: list[list[ list[int] ]] = [[_font_colors[' ']] * position for _ in range(text_height)]
-    right_padding: int = position # = 2 * padding. micro optimisation goes brrr
+    text_height: int = len(used_font['none']) * scale
+    lines: list[list[ list[int] ]] = [[background_col] * position for _ in range(text_height)]
+    right_padding: int = position  # = 2 * padding. micro optimisation goes brrr
     is_auto_new_line: bool = False
     for char in text:
         if is_auto_new_line and char == ' ':
             continue
         else:
             is_auto_new_line = False
-        printed_char: list[list[ list[int] ]] = [[pixel for pixel in line for _ in range(scale)] for line in true_font[char] for _ in range(scale)] if char in true_font else true_font['none']
+        printed_char: list[list[ list[int] ]] = [[pixel for pixel in line for _ in range(scale)] for line in used_font[char] for _ in range(scale)] if char in used_font else used_font['none']
         if char == '\n' or position + len(printed_char[0]) > size_x - right_padding:
             for i in range(text_height):
-                lines[-text_height + i].extend([_font_colors[' ']] * (size_x - len(lines[-text_height + i])))
+                lines[-text_height + i].extend([background_col] * (size_x - len(lines[-text_height + i])))
             position = 2 * scale
-            lines.extend([[_font_colors[' ']] * position for _ in range(text_height)])
+            lines.extend([[background_col] * position for _ in range(text_height)])
             if char == ' ':
                 is_auto_new_line = True
                 continue
@@ -322,12 +430,12 @@ def generate_text_bitmap(text: str, size_x: int = 256, size_y: int = 256, scale:
             lines[-text_height + i].extend(line)
         position += len(printed_char[0])
     for i in range(text_height):
-        lines[-text_height + i].extend([_font_colors[' ']] * (size_x - len(lines[-text_height + i])))
+        lines[-text_height + i].extend([background_col] * (size_x - len(lines[-text_height + i])))
 
     if len(lines) > size_y:
         return lines[:size_y]
     # else:
-    lines.extend([[_font_colors[' ']] * size_x] * (size_y - len(lines)))
+    lines.extend([[background_col] * size_x] * (size_y - len(lines)))
     return lines
 
 def crc32(data):
@@ -340,7 +448,7 @@ def crc32(data):
 def logwrap(level: Literal["info", "debug", "warning", "error", "critical"], msg: str) -> str:
     """A special function in place of the regular `logging` calls, as to not raise errors if `logging` is not found.
 
-    Args:
+    Arguments:
         level (Literal["info", "debug", "warning", "error", "critical"]): The log level.
         msg (str): The message to log.
 
@@ -375,10 +483,14 @@ def logwrap(level: Literal["info", "debug", "warning", "error", "critical"], msg
 def get_time_100ns() -> int:
 
     """
-    Get the current time in 100 nanoseconds precision. Notably used in metadata and for BRCI backups.
+    Get the current time in hundreds of nanoseconds. Notably used in metadata and for BRCI backups.
 
-    :return: 100s of nanoseconds since 0001-01-01 00:00:00
-    :rtype: int
+    Returns:
+        int: 100s of nanoseconds since 0001-01-01 00:00:00
+
+    Exceptions:
+        OSError: Failed to retrieve time
+        OverflowError: Time is set past 8639-12-17 23:59:59. In this case BRCI is not your least concern.
     """
 
     # Get current UTC time
@@ -397,12 +509,23 @@ def is_valid_folder_name(name: str, is_nt: bool) -> bool:
     """
     Check if the folder name is valid.
 
-    :param name: Potentially invalid name
-    :param is_nt: True if we are working with NT, otherwise False (POSIX)
+    Arguments:
+        name (str): Name of the folder.
+        is_nt (bool): True if we are working with NT, otherwise False (POSIX). Can be checked using `os.name == 'nt'`
 
-    :return: True if the name is valid, otherwise False
-    :rtype: bool
+    Returns:
+        bool: True if the folder name is valid, otherwise False
+
+    Exceptions:
+        TypeError: name is not a string or is_nt is not a boolean
     """
+
+    if not type(name) == str:
+        raise TypeError("Folder name must be a string")
+
+    if not type(is_nt) == bool:
+        raise TypeError("is_nt must be a boolean")
+
 
     if is_nt:
         # Check for NT system validity
@@ -423,16 +546,12 @@ def is_valid_folder_name(name: str, is_nt: bool) -> bool:
         bad_folder_names = ("CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3",
                 "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7",
                 "LPT8", "LPT9") # Technically EVER SO SLIGHTLY less efficient to make this a full variable, but screw you, fight with me over it. More readable.
-        
-        # In the name of readability, I call upon thee, backslashes!
-        # Once again, argue with me if you have an issue with it. This was horrid unreadable spaghetti before I did this backslash stuff.
-        # Much better.
 
-        if re.search(nt_match, name[2:] if len(name) > 1 and name[1] == ':' else name) or \
-        len(name) == 0 or \
-        set(name) == set() or \
-        name[-1] in {'.', ' '} or \
-        name in bad_folder_names:
+        if (re.search(nt_match, name[2:] if len(name) > 1 and name[1] == ':' else name) or
+                len(name) == 0 or
+                set(name) == set() or
+                name[-1] in {'.', ' '} or
+                name in bad_folder_names):
             # This name is invalid. Return False.
             logwrap("warning", f"NT directory name check *failed*. Dirname: {name}")
             # If you have an issue with logs being here, let me know. These will help with debugging.

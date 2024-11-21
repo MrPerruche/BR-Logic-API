@@ -29,16 +29,20 @@ class Creation14:
         """
         Project creation class for version 14 (Brick Rigs 1.7.0+).
 
-        :param project_name: Name of the folder in which all Brick Rigs file (Vehicle.brv etc.) will be stored.
-        :param project_dir: Directory where these folders will go in.
-        :param name: Name of the project displayed in-game.
-        :param description: Description of the project displayed in-game.
-        :param appendix: Hidden binary data in files.
-        :param tags: List of tags for the project.
-        :param visibility: Visibility of the project, set to VISIBILITY_PUBLIC, VISIBILITY_FRIENDS, VISIBILITY_PRIVATE or VISIBILITY_HIDDEN.
-        :param seat: Name of the driver seat (if there is one).
-        :param creation_time: Time the project was created (in 100s of nanoseconds since 0001-01-01 00:00:00 UTC).
-        :param update_time: Time the project was last updated (in 100s of nanoseconds since 0001-01-01 00:00:00 UTC).
+        Arguments:
+            project_name (str): Name of the folder in which all Brick Rigs file (Vehicle.brv etc.) will be stored.
+            project_dir (str): Directory where these folders will go in.
+            name (str): Name of the project displayed in-game.
+            description (str): Description of the project displayed in-game.
+            appendix (bytes | bytearray): Hidden binary data in files.
+            tags (list[str] | None): List of tags for the project.
+            visibility (int): Visibility of the project, set to VISIBILITY_PUBLIC, VISIBILITY_FRIENDS, VISIBILITY_PRIVATE or VISIBILITY_HIDDEN.
+            seat (Optional[str | int]): Name of the driver seat (if there is one).
+            creation_time (Optional[int]): Time the project was created (in 100s of nanoseconds since 0001-01-01 00:00:00 UTC).
+            update_time (Optional[int]): Time the project was last updated (in 100s of nanoseconds since 0001-01-01 00:00:00 UTC).
+            size (Optional[list[float]]): Size of the project (in meters).
+            weight (float): Weight of the project (in kilograms).
+            price (float): Price of the project (in dollars).
         """
 
         # Path related
@@ -83,12 +87,16 @@ class Creation14:
         """
         Will add a new brick to the creation.
 
-        :param brick_type:
-        :param name:
-        :param position:
-        :param rotation:
-        :param properties:
-        :return:
+        Arguments:
+            brick_type (str): Type of the brick.
+            name (str | int): Name or identifier of the brick.
+            position (Optional[list[float]], optional): (x, y, z) coordinates of the brick's position. Defaults to None.
+            rotation (Optional[list[float]], optional): (pitch, yaw, roll) angles in degrees for the brick's rotation. Defaults to None.
+            properties (Optional[dict[str, Any]], optional): Additional properties of the brick as key-value pairs. Defaults to None.
+
+        Exceptions:
+            ValueError: If the brick type does not exist
+            TypeError: One of the arguments is of invalid type
         """
 
         # I will put a logger call here, but it will be commented out. Only uncomment it if you REALLY need it, because it will spam like crazy.
@@ -105,13 +113,12 @@ class Creation14:
         """
         Will raise errors if class parameters are invalid.
 
-        :param args: List of class parameters name.
+        Arguments:
+            *args (str): List of parameters to check.
 
         Exceptions:
-        OSError - Project name (project_name) is invalid
-        OSError - Project dir (project_dir) is invalid
-
-        Does not return anything.
+            OSError: Project name (project_name) is invalid
+            OSError: Project dir (project_dir) is invalid
         """
 
         # Project name
@@ -120,12 +127,7 @@ class Creation14:
             # Valid folder name? cannot be mitigated.
             if not is_valid_folder_name(self.project_name, os.name == 'nt'):
 
-                # Signal there's something wrong
-                FM.error("Invalid project name.", "Your os do not support such folder names. As such, this project cannot be created.")
-                logwrap("critical", f"Creation14::assert_valid_parameters || Bad NT project name!: {self.project_name}")
-                
-                raise OSError(f"Invalid project name: couldn't create a file named {self.project_name}." +
-                              (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+                raise OSError(f"Invalid project name: couldn't create a file named {self.project_name}.")
 
         # Project dir
         if 'project_dir' in args:
@@ -133,12 +135,7 @@ class Creation14:
             # Valid project path? cannot be mitigated.
             if not os.path.exists(self.project_dir):
 
-                # Signal there's something wrong
-                FM.error("Invalid project path.", "The path you provided is not valid. As such, this project cannot be created.")
-                logwrap("critical", f"Creation14::assert_valid_parameters || Bad project path! (No such directory): {self.project_dir}")
-
-                raise OSError(f"Invalid project path: couldn't create a folder at {self.project_dir}." +
-                              (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+                raise OSError(f"Invalid project path: couldn't create a folder at {self.project_dir}.")
 
 
     def backup(self, dst: str = BACKUP_FOLDER, name: Optional[str] = None) -> Self:
@@ -146,15 +143,16 @@ class Creation14:
         """
         Backup Brick Rigs' vehicle folder.
 
-        :param dst: Directory where the backup will be stored.
-        :param name: Name of the folder in which all Brick Rigs file (Vehicle.brv etc.) will be stored. If none, 100s of nanoseconds since 0001-01-01 00:00:00 UTC will be used.
+        Arguments:
+            dst (str): Directory where the backup will be stored.
+            name (Optional[str]): Name of the folder in which all Brick Rigs file (Vehicle.brv etc.) will be stored. If none, 100s of nanoseconds since 0001-01-01 00:00:00 UTC will be used.
 
         Exceptions:
-        OSError - Project name (project_name) is invalid
-        OSError - Project dir (project_dir) is invalid
-        OSError - Backup folder (dst param) not found
-        OSError - Backup failed
-        FileNotFoundError - No Brick Rigs vehicle folder found.
+        OSError: Project name (project_name) is invalid
+        OSError: Project dir (project_dir) is invalid
+        OSError: Backup folder (dst param) not found
+        OSError: Backup failed
+        FileNotFoundError: No Brick Rigs vehicle folder found.
 
         Returns the current object.
         """
@@ -171,14 +169,7 @@ class Creation14:
 
         if not os.path.exists(dst):
 
-            FM.error("Backup folder not found.",
-                     "The path you provided is missing or not valid. As such, this project cannot be created.")
-
-            logwrap("critical", f"Creation14::backup || Bad backup folder! (No such directory): {dst}")
-
-            # This error cannot be mitigated.
-            raise OSError(f"Backup folder not found: couldn't create a folder at {dst}." +
-                          (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+            raise OSError(f"Backup folder not found: couldn't create a folder at {dst}.")
 
         # See if there's a path that exist among the list of possible paths, if so, copy it to the backup folder
         try:
@@ -193,8 +184,7 @@ class Creation14:
 
         # Else, then it failed, so we end with an error.
         logwrap("critical", f"Creation14::backup || No Brick Rigs vehicle folder found!")
-        raise FileNotFoundError("No Brick Rigs vehicle folder found." +
-                                (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+        raise FileNotFoundError("No Brick Rigs vehicle folder found.")
 
 
     # Following class naming conventions instead.
@@ -209,16 +199,19 @@ class Creation14:
         """
         Will return the brick class used for this creation class.
 
-        :param brick_type: Type of the brick.
-        :param name: Name or identifier of the brick.
-        :param position: (x, y, z) coordinates of the brick's position.
-        :param rotation: (pitch, yaw, roll) angles in degrees for the brick's rotation.
-        :param properties: Additional properties of the brick as key-value pairs.
+        Arguments:
+            brick_type (str): Type of the brick.
+            name (str | int): Name or identifier of the brick.
+            position (Optional[list[float]], optional): (x, y, z) coordinates of the brick's position. Defaults to None.
+            rotation (Optional[list[float]], optional): (pitch, yaw, roll) angles in degrees for the brick's rotation. Defaults to None.
+            properties (Optional[dict[str, Any]], optional): Additional properties of the brick as key-value pairs. Defaults to None.
+
+        Returns:
+            Brick14: Newly created Brick14 object.
 
         Exceptions:
-        <TODO>
-
-        Returns the created brick class object.
+            ValueError: If the brick type does not exist
+            TypeError: Name is of invalid type
         """
 
         return Brick14(brick_type, name, position, rotation, properties)
@@ -228,6 +221,9 @@ class Creation14:
 
         """
         Returns the version of the Creation object (14).
+
+        Returns:
+            int: Version of the Creation object
         """
 
         return self.__FILE_VERSION
@@ -238,13 +234,18 @@ class Creation14:
         """
         Will write the .brv (vehicle) file
 
-        :param file_name: Name of the file (Brick Rigs will search for Vehicle.brv)
-        :param exist_ok: If Vehicle.brv already exists: if set to True, replace, else raise an error.
+        Arguments:
+            file_name (str): Name of the file (Brick Rigs will search for Vehicle.brv)
+            exist_ok (bool): If Vehicle.brv already exists: if set to True, replace, else raise an error.
+
+        Returns:
+            Self
 
         Exceptions:
-        <TODO>
-
-        Returns the current object.
+            OSError: Invalid path
+            ValueError: Invalid value for one of the properties
+            NameError: Unknown brick name (brick with this name missing from brci.Creation().bricks) set in one of the properties
+            brci.BrickError: One of the bricks are invalid, raising unexpected error.
         """
 
         # ################### VERIFYING PATHS ####################
@@ -252,29 +253,12 @@ class Creation14:
 
         if not is_valid_folder_name(os.path.join(self.project_dir, self.project_name, file_name), os.name == 'nt'):
 
-            # This error cannot be mitigated
-            FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
-                                     f"A such named folder cannot be created.")
-            
-            logwrap("critical", f"Creation14::write_creation || Bad NT project name!: {self.project_name}")
-            
-            raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}" +
-                          (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+            raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
 
 
         if not exist_ok and os.path.exists(os.path.join(self.project_dir, self.project_name, file_name)):
 
-            FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
-                                     f"A such named file cannot be created.")
-            
-            logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
-            f"Creation14::write_creation || Bad project name (Already exists)!: {self.project_name} (Error mitigation is set to {settings['attempt_error_mitigation']})")
-            
-            if settings['attempt_error_mitigation']:
-                FM.success("Cancelling creation file creation")
-                logwrap("info", f"Creation14::write_creation || Cancelled creation file creation.")
-            else:
-                raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
+            raise OSError(f"Path exists: {os.path.join(self.project_dir, self.project_name, file_name)}")
 
         # #################### TREATMENT ####################
 
@@ -404,9 +388,18 @@ class Creation14:
     def write_metadata(self, file_name: str = 'MetaData.brm', exist_ok: bool = True) -> Self:
 
         """
-        Will write the metadata file. TODO
+        Will write the metadata file.
 
-        :return:
+        Arguments:
+            file_name (str): Name of the file to write.
+            exist_ok (bool): If True, will overwrite the file if it already exists.
+
+        Returns:
+            Self
+
+        Exceptions:
+            OverflowError: One of the values are invalid causing an overflow error.
+            UnicodeEncodeException: One of the values are invalid causing an encoding error.
         """
 
         # ################### VERIFYING PATHS ####################
@@ -414,28 +407,11 @@ class Creation14:
 
         if not is_valid_folder_name(os.path.join(self.project_dir, self.project_name, file_name), os.name == 'nt'):
 
-            # This error cannot be mitigated
-            FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
-                                     f"A such named folder cannot be created.")
-
-            logwrap("critical", f"Creation14::write_metadata || Bad NT path!: {os.path.join(self.project_dir, self.project_name, file_name)}")
-
-            raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}" +
-                          (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+            raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
 
         if not exist_ok and os.path.exists(os.path.join(self.project_dir, self.project_name, file_name)):
 
-            FM.error("Invalid path", f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
-                                     f"A such named file cannot be created.")
-
-            logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
-            f"Creation14::write_creation || Bad project name (Already exists)!: {self.project_name} (Error mitigation is set to {settings['attempt_error_mitigation']})")
-
-            if settings['attempt_error_mitigation']:
-                FM.success("Cancelling metadata file creation")
-                logwrap("info", "Creation14::write_metadata || Cancelled metadata file creation.")
-            else:
-                raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
+            raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
 
         # #################### WRITING ####################
 
@@ -512,37 +488,33 @@ class Creation14:
 
     def write_preview(self, image_path: str, file_name: str = 'Preview.png', exist_ok: bool = True) -> Self:
 
-        # TODO: Docstring
+        """
+        Will write preview for a file. A few default previews are included in brci. See brci.BRCI_THUMBNAIL, ...
+
+        Arguments:
+            image_path (str): Path to the image.
+            file_name (str): Name of the file to write.
+            exist_ok (bool): If True, will overwrite the file if it already exists.
+
+        Returns:
+            Self
+
+        Exceptions:
+            OSError: Image not found
+            OSError: Preview already exists
+        """
 
         # ################### VERIFYING PATHS ####################
 
         if not os.path.exists(image_path):
-            # This error cannot be mitigated
-            FM.error("Image missing",
-                     f"No image found at {os.path.join(self.project_dir, self.project_name, file_name)}\n"
-                     f"Image could not be taken")
 
-            logwrap("critical", f"Creation14::write_preview || Image missing: {self.project_name}")
-
-            raise OSError(f"Image missing {os.path.join(self.project_dir, self.project_name, file_name)}." +
-                          (" Error mitigation failed." if settings['attempt_error_mitigation'] else ""))
+            raise OSError(f"Image missing {os.path.join(self.project_dir, self.project_name, file_name)}.")
 
         # TODO CHECK FOR PATH & NAME VALIDITY
 
         if not exist_ok and os.path.exists(os.path.join(self.project_dir, self.project_name, file_name)):
 
-            FM.error("Invalid path",
-                     f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
-                     f"A such named file cannot be created.")
-
-            logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
-                    f"Creation14::write_creation || Bad project name (Already exists)!: {self.project_name} (Error mitigation is set to {settings['attempt_error_mitigation']})")
-
-            if settings['attempt_error_mitigation']:
-                FM.success("Cancelling creation file creation")
-                logwrap("info", f"Creation14::write_creation || Cancelled creation file creation.")
-            else:
-                raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
+            raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
 
         # ################### WRITING IMAGE ####################
 
@@ -557,26 +529,27 @@ class Creation14:
 
     def create_preview(self, bitmap_image: list[list[list[int]]], file_name: str = 'Preview.png', exist_ok: bool = True) -> Self:
 
-        # TODO DOCSTRING
+        """
+        Will create a preview for the file using a given a grid of RGBA values
 
-        # VERIFICATIONS
+        Arguments:
+            bitmap_image (list[list[list[int]]]): A grid of RGBA values
+            file_name (str): Name of the file to write.
+            exist_ok (bool): If True, will overwrite the file if it already exists.
 
-        # TODO CHECK FOR PATH & NAME VALIDITY
+        Returns:
+            Self
+
+        Exceptions:
+            NotImplementedError: Not working yet
+            todo
+        """
+
+        raise NotImplementedError()
 
         if not exist_ok and os.path.exists(os.path.join(self.project_dir, self.project_name, file_name)):
 
-            FM.error("Invalid path",
-                     f"Path {os.path.join(self.project_dir, self.project_name, file_name)} is invalid.\n"
-                     f"A such named file cannot be created.")
-
-            logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
-                    f"Creation14::write_creation || Bad project name (Already exists)!: {self.project_name} (Error mitigation is set to {settings['attempt_error_mitigation']})")
-
-            if settings['attempt_error_mitigation']:
-                FM.success("Cancelling creation file creation")
-                logwrap("info", f"Creation14::write_creation || Cancelled creation file creation.")
-            else:
-                raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
+            raise OSError(f"Invalid path {os.path.join(self.project_dir, self.project_name, file_name)}")
 
 
         # GENERATION
@@ -624,28 +597,22 @@ class Creation14:
         """
         Will read the .brv (vehicle) file, and append it to the creation's bricks.
 
-        :param file_path: Path of the .brv file
-        :type file_path: str
+        Arguments:
+            file_path (str): Path of the .brv file
 
-        :raises FileNotFoundError: If the file does not exist
-        :raises NotImplementedError: Either this function isn't finished, or the file being read is from a higher version
+        Returns:
+            Self
 
-        :return: self
+        Exceptions:
+            FileNotFoundError: Invalid path
+            NotImplementedError: Either this function isn't finished, or the file being read is from a higher version
+            todo
         """
 
         if not settings['wip_features']: raise NotImplementedError()
 
         if not os.path.exists(file_path):
-            FM.error("Invalid path", f"Path {file_path} is invalid.\n"
-                                     f"A such named file cannot be read.")
-            
-            logwrap("warning" if settings['attempt_error_mitigation'] else "critical", "Creation14::read_creation || Specified file does not exist.")
-            
-            if settings['attempt_error_mitigation']:
-                FM.success("Cancelling creation file read...")
-                logwrap("info", "Creation14::read_creation || Cancelled creation file read.")
-            else:
-                raise FileNotFoundError(f"Invalid path {file_path}")
+            raise FileNotFoundError(f"Invalid path {file_path}")
 
         with open(file_path, 'rb') as f:
             file = bytearray(f.read())
@@ -657,17 +624,7 @@ class Creation14:
 
         # Version check:
         if file_version != self.get_version():
-            FM.error("Invalid version", f"Version {file_version} mismatch, {self.get_version()}).\n"
-                                     f"A such version cannot be read.")
-            
-            logwrap("warning" if settings['attempt_error_mitigation'] else "critical",
-            f"Creation14::read_creation || Bad file version! Creation14 does not support: {file_version}")
-            
-            if settings['attempt_error_mitigation']:
-                FM.success("Cancelling creation file read...")
-                logwrap("info", "Creation14::read_creation || Cancelled creation file read.")
-            else:
-                raise NotImplementedError(f"Version {file_version} mismatch, {self.get_version()})")
+            raise NotImplementedError(f"Version {file_version} mismatch, {self.get_version()})")
 
         # The next two bytes are the number of bricks in the creation. (uint16)
         num_bricks: int = get_unsigned_int(extract_bytes(file, 2))
@@ -752,12 +709,6 @@ class Creation14:
                         values.append(get_unsigned_int(bin_value))
 
             properties.update({prop_name: values})
-
-
-
-
-
-
 
 
 

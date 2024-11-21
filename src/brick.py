@@ -3,7 +3,7 @@ from typing import Self, Optional, TypeVar, Final, Iterable, Literal
 # from copy import deepcopy
 from .bricks import *
 from .utils import Limits, FM, settings
-from .write_utils import is_utf_encodable
+from .write_utils import can_be_encoded_in_utf
 
 # from typing import Any -> from .bricks.bricks_utils
 
@@ -18,12 +18,15 @@ def _has_valid_properties(default_settings: dict[str, Any], property_map: dict[s
     """
     Internal function to check if properties are valid.
 
-    :param default_settings: Default settings for a brick
-    :param property_map: List of known properties
-    :param properties: List of properties of the brick
-    :param call_callables: If yes or no we call callable inputs such as lambda functions.
+    Arguments:
+        default_settings (dict[str, Any]): Default settings for a brick
+        property_map (dict[str, str]): List of known properties.
+        properties (dict[str, Any]): List of properties of the brick
+        call_callables (bool): If yes or no we call callable inputs such as lambda functions.
 
-    Returns a boolean indicating if it's valid or not and a string with an error message if not.
+    Returns:
+         bool: indicating if it's valid or not and a string with an error message if not.
+         str: error message (or empty string if valid)
     """
 
 
@@ -60,97 +63,99 @@ def _has_valid_properties(default_settings: dict[str, Any], property_map: dict[s
         # Get what type the property is (we already checked if it was of a valid type)
         prop_type = property_map[property_]
 
-        # Binary: must be bytes or bytearray
-        if prop_type == 'bin':
-            if not isinstance(analyzed_value, (bytes, bytearray)):
-                return False, f'Property {property_} must be bytes or bytearray.'
+        match prop_type:
 
-        # Boolean: must be a boolean
-        elif prop_type == 'bool':
-            if not hasattr(analyzed_value, "__bool__"):
-                return False, f'Property {property_} must be a boolean.'
+            # Binary: must be bytes or bytearray
+            case 'bin':
+                if not isinstance(analyzed_value, (bytes, bytearray)):
+                    return False, f'Property {property_} must be bytes or bytearray.'
 
-        # Brick id: must be a string or integers (bricks are represented with strings and integers)
-        elif prop_type == 'brick_id':
-            if not isinstance(analyzed_value, (str, int)):
-                return False, f'Property {property_} must be a string or an integer.'
+            # Boolean: must be a boolean
+            case 'bool':
+                if not hasattr(analyzed_value, "__bool__"):
+                    return False, f'Property {property_} must be a boolean.'
 
-        # Float: must be a float
-        elif prop_type == 'float':
-            if not isinstance(analyzed_value, float):
-                return False, f'Property {property_} must be a float.'
+            # Brick id: must be a string or integers (bricks are represented with strings and integers)
+            case 'brick_id':
+                if not isinstance(analyzed_value, (str, int)):
+                    return False, f'Property {property_} must be a string or an integer.'
 
-        # List[3*float]: must be a list of 3 floats
-        elif prop_type == 'list[3*float]':
-            if not isinstance(analyzed_value, list):
-                return False, f'Property {property_} must be a list of 3 floats.'
-            if len(analyzed_value) != 3:
-                return False, f'Property {property_} must be a list of 3 floats.'
-            if not all(isinstance(item, float) for item in analyzed_value):
-                return False, f'Property {property_} must be a list of 3 floats.'
+            # Float: must be a float
+            case 'float':
+                if not isinstance(analyzed_value, float):
+                    return False, f'Property {property_} must be a float.'
 
-        # List[3*uint8]: must be a list of 3 integers between 0 and 255
-        elif prop_type == 'list[3*uint8]':
-            if not isinstance(analyzed_value, list):
-                return False, f'Property {property_} must be a list of 3 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
-            if len(analyzed_value) != 3:
-                return False, f'Property {property_} must be a list of 3 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
-            if not all(isinstance(item, int) for item in analyzed_value):
-                return False, f'Property {property_} must be a list of 3 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
-            if not all(Limits.U8_MIN <= item <= Limits.U8_MAX for item in analyzed_value):
-                return False, f'Property {property_} must be a list of 3 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
+            # List[3*float]: must be a list of 3 floats
+            case 'list[3*float]':
+                if not isinstance(analyzed_value, list):
+                    return False, f'Property {property_} must be a list of 3 floats.'
+                if len(analyzed_value) != 3:
+                    return False, f'Property {property_} must be a list of 3 floats.'
+                if not all(isinstance(item, float) for item in analyzed_value):
+                    return False, f'Property {property_} must be a list of 3 floats.'
 
-        # List[4*uint8]: must be a list of 4 integers between 0 and 255
-        elif prop_type == 'list[4*uint8]':
-            if not isinstance(analyzed_value, list):
-                return False, f'Property {property_} must be a list of 4 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
-            if len(analyzed_value) != 4:
-                return False, f'Property {property_} must be a list of 4 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
-            if not all(isinstance(item, int) for item in analyzed_value):
-                return False, f'Property {property_} must be a list of 4 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
-            if not all(Limits.U8_MIN <= item <= Limits.U8_MAX for item in analyzed_value):
-                return False, f'Property {property_} must be a list of 4 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
+            # List[3*uint8]: must be a list of 3 integers between 0 and 255
+            case 'list[3*uint8]':
+                if not isinstance(analyzed_value, list):
+                    return False, f'Property {property_} must be a list of 3 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
+                if len(analyzed_value) != 3:
+                    return False, f'Property {property_} must be a list of 3 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
+                if not all(isinstance(item, int) for item in analyzed_value):
+                    return False, f'Property {property_} must be a list of 3 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
+                if not all(Limits.U8_MIN <= item <= Limits.U8_MAX for item in analyzed_value):
+                    return False, f'Property {property_} must be a list of 3 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
 
-        # List[6*uint2]: must be a list of 6 integers between 0 and 3
-        elif prop_type == 'list[6*uint2]':
-            if not isinstance(analyzed_value, list):
-                return False, f'Property {property_} must be a list of 6 integers between {Limits.U2_MIN} and {Limits.U2_MAX}.'
-            if len(analyzed_value) != 6:
-                return False, f'Property {property_} must be a list of 6 integers between {Limits.U2_MIN} and {Limits.U2_MAX}.'
-            if not all(isinstance(item, int) for item in analyzed_value):
-                return False, f'Property {property_} must be a list of 6 integers between {Limits.U2_MIN} and {Limits.U2_MAX}.'
-            if not all(Limits.U2_MIN <= item <= Limits.U2_MAX for item in analyzed_value):
-                return False, f'Property {property_} must be a list of 6 integers between {Limits.U2_MIN} and {Limits.U2_MAX}.'
+            # List[4*uint8]: must be a list of 4 integers between 0 and 255
+            case 'list[4*uint8]':
+                if not isinstance(analyzed_value, list):
+                    return False, f'Property {property_} must be a list of 4 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
+                if len(analyzed_value) != 4:
+                    return False, f'Property {property_} must be a list of 4 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
+                if not all(isinstance(item, int) for item in analyzed_value):
+                    return False, f'Property {property_} must be a list of 4 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
+                if not all(Limits.U8_MIN <= item <= Limits.U8_MAX for item in analyzed_value):
+                    return False, f'Property {property_} must be a list of 4 integers between {Limits.U8_MIN} and {Limits.U8_MAX}.'
 
-        # List[brick_id]: must be a list of brick ids (either strings or integers)
-        elif prop_type == 'list[brick_id]':
-            if not isinstance(analyzed_value, list):
-                return False, f'Property {property_} must be a list of brick ids (either strings or integers).'
-            if not isinstance(analyzed_value, (str, int)):
-                return False, f'Property {property_} must be a list of brick ids (either strings or integers).'
+            # List[6*uint2]: must be a list of 6 integers between 0 and 3
+            case 'list[6*uint2]':
+                if not isinstance(analyzed_value, list):
+                    return False, f'Property {property_} must be a list of 6 integers between {Limits.U2_MIN} and {Limits.U2_MAX}.'
+                if len(analyzed_value) != 6:
+                    return False, f'Property {property_} must be a list of 6 integers between {Limits.U2_MIN} and {Limits.U2_MAX}.'
+                if not all(isinstance(item, int) for item in analyzed_value):
+                    return False, f'Property {property_} must be a list of 6 integers between {Limits.U2_MIN} and {Limits.U2_MAX}.'
+                if not all(Limits.U2_MIN <= item <= Limits.U2_MAX for item in analyzed_value):
+                    return False, f'Property {property_} must be a list of 6 integers between {Limits.U2_MIN} and {Limits.U2_MAX}.'
 
-        # String (utf-8): must be a string encodable in utf-8
-        elif prop_type == 'str8':
-            if not isinstance(analyzed_value, str):
-                return False, f'Property {property_} must be a string encodable in utf-8.'
-            # Check if it is encodable in utf-8
-            if not is_utf_encodable(analyzed_value):
-                return False, f'Property {property_} must be a string encodable in utf-8.'
+            # List[brick_id]: must be a list of brick ids (either strings or integers)
+            case 'list[brick_id]':
+                if not isinstance(analyzed_value, list):
+                    return False, f'Property {property_} must be a list of brick ids (either strings or integers).'
+                if not isinstance(analyzed_value, (str, int)):
+                    return False, f'Property {property_} must be a list of brick ids (either strings or integers).'
 
-        # String (utf-16): must be a string encodable in utf-16.
-        elif prop_type == 'strany':
-            if not isinstance(analyzed_value, str):
-                return False, f'Property {property_} must be a string encodable in utf-8 or utf-16.'
-            # Check if it is encodable in utf-8 and utf-16
-            if not is_utf_encodable(analyzed_value):
-                return False, f'Property {property_} must be a string encodable in utf-8 or utf-16.'
+            # String (utf-8): must be a string encodable in utf-8
+            case 'str8':
+                if not isinstance(analyzed_value, str):
+                    return False, f'Property {property_} must be a string encodable in utf-8.'
+                # Check if it is encodable in utf-8
+                if not can_be_encoded_in_utf(analyzed_value):
+                    return False, f'Property {property_} must be a string encodable in utf-8.'
 
-        # Integer: must be an integer between 0 and 255
-        elif prop_type == 'uint8':
-            if not isinstance(analyzed_value, int):
-                return False, f'Property {property_} must be an integer between {Limits.U8_MIN} and {Limits.U8_MAX}.'
-            if not (Limits.U8_MIN <= analyzed_value <= Limits.U8_MAX):
-                return False, f'Property {property_} must be an integer between {Limits.U8_MIN} and {Limits.U8_MAX}.'
+            # String (utf-16): must be a string encodable in utf-16.
+            case 'strany':
+                if not isinstance(analyzed_value, str):
+                    return False, f'Property {property_} must be a string encodable in utf-8 or utf-16.'
+                # Check if it is encodable in utf-8 and utf-16
+                if not can_be_encoded_in_utf(analyzed_value):
+                    return False, f'Property {property_} must be a string encodable in utf-8 or utf-16.'
+
+            # Integer: must be an integer between 0 and 255
+            case 'uint8':
+                if not isinstance(analyzed_value, int):
+                    return False, f'Property {property_} must be an integer between {Limits.U8_MIN} and {Limits.U8_MAX}.'
+                if not (Limits.U8_MIN <= analyzed_value <= Limits.U8_MAX):
+                    return False, f'Property {property_} must be an integer between {Limits.U8_MIN} and {Limits.U8_MAX}.'
 
 
 # TODO
@@ -161,10 +166,9 @@ def new_properties(properties: dict[str, Literal["bin", "bool", "brick_id", "flo
     """
     Add or edit a property in the list of known properties and their type.
 
-    :param properties: dictionary with property names (str) as keys and their corresponding property type (str) as values
-    :param affected_versions: list of all versions that will see these changes applied. Defaults to all known versions
-
-    Do not return anything.
+    Arguments:
+        properties (dict[str, str]): Dictionary with property names (str) as keys and their corresponding property type (str) as values.
+        affected_versions (Iterable[int], optional): List of all versions that will see these changes applied. Defaults to all known versions.
     """
 
     # Making sure everything is supported
@@ -175,33 +179,13 @@ def new_properties(properties: dict[str, Literal["bin", "bool", "brick_id", "flo
     for ver in affected_versions:
         if ver not in SUPPORTED_VERSIONS:
 
-            # Warn user something is wrong
-            FM.error(f"Unknown or non-supported file version {ver!r}",
-                     f"BRCI follows the following versions: {", ".join([str(v) for v in SUPPORTED_VERSIONS])}.")
-
-            # See if we can fix it
-            if settings['attempt_error_mitigation']:
-                # Ignore this property
-                FM.success(f"Skipped unknown or non-supported version {ver}.")
-
-            else:
-                raise ValueError(f"Unknown or non-supported file version {ver!r}")
+            raise ValueError(f"Unknown or non-supported file version {ver!r}")
 
     # Making sure types are right:
     for p, t in properties.items():
         if t not in SUPPORTED_PROPERTY_TYPES:
 
-            # Warn user something is wrong
-            FM.error(f"Unknown property type {t!r} (for {p!r})",
-                     f"BRCI follows the following types: {', '.join([repr(t_) for t_ in SUPPORTED_PROPERTY_TYPES])}.")
-
-            # See if we fix it
-            if settings['attempt_error_mitigation']:
-                # Ignore this property
-                FM.success(f"Skipped property {p!r}.")
-
-            else:
-                raise ValueError(f"Unknown property type {t!r} (for {p!r})")
+            raise ValueError(f"Unknown property type {t!r} (for {p!r})")
 
         # else:
         sanitized_properties.update({p: t})
@@ -218,12 +202,11 @@ def new_types(types: Iterable[str], properties: dict[str, Any], common_propertie
     """
     Function to modify or implement custom (modded) bricks.
 
-    :param types: list of brick types
-    :param properties: dictionary with property names (str) as keys and their corresponding property type (str) as values
-    :param common_properties: whether to add common properties
-    :param affected_versions: list of all versions that will see these changes applied. Defaults to all known versions
-
-    Does not return anything.
+    Arguments:
+        types (Iterable[str]): List of custom brick types.
+        properties (dict[str, Any]): Dictionary with property names (str) as keys and their corresponding property type (str) as values.
+        common_properties (bool, optional): Whether to add common properties. Defaults to True.
+        affected_versions (Iterable[int], optional): List of all versions that will see these changes applied. Defaults to all known versions.
     """
 
     # I know repetition should be avoided, but speed is more important.
@@ -251,12 +234,20 @@ class Brick14:
         """
         Will store all data for a single brick.
 
-        :param brick_type: Type of the brick.
-        :param name: Name or identifier of the brick.
-        :param position: (x, y, z) coordinates of the brick's position.
-        :param rotation: (pitch, yaw, roll) angles in degrees for the brick's rotation.
-        :param properties: Additional properties of the brick as key-value pairs.
+        Arguments:
+            brick_type (str): Type of the brick.
+            name (str | int): Name or identifier of the brick.
+            position (Optional[list[float]], optional): (x, y, z) coordinates of the brick's position. Defaults to None.
+            rotation (Optional[list[float]], optional): (pitch, yaw, roll) angles in degrees for the brick's rotation. Defaults to None.
+            properties (Optional[dict[str, Any]], optional): Additional properties of the brick as key-value pairs. Defaults to None.
+
+        Exceptions:
+            ValueError: If the brick type does not exist
+            TypeError: Name is of invalid type
         """
+
+        if type(name) not in (str, int):
+            raise TypeError(f"Name must be a string or integer, not {type(name).__name__}.")
 
         # Set all variables
         self._brick_type = brick_type
@@ -269,7 +260,14 @@ class Brick14:
         self.set_type(brick_type)
 
 
-    def get_type(self):
+    def get_type(self) -> str:
+
+        """
+        Will return the brick type of the Brick14 object.
+
+        Returns:
+            str: Type of the Brick14 object
+        """
         return self._brick_type
 
 
@@ -278,9 +276,11 @@ class Brick14:
         """
         Will return all invalid values for this brick.
 
-        :param call_callables: If True, will call all callables in properties.
+        Arguments:
+            call_callables (bool): Whether to call the callables or not. Defaults to False.
 
-        Return a list of strings corresponding to invalid values.
+        Returns:
+            list[str]: List of invalid values
         """
 
         # Doc inherited from _Brick.is_valid_brick()
@@ -316,9 +316,14 @@ class Brick14:
         """
         Sets the brick to a new type. Attempts to preserve any property in common with the new brick.
 
-        :param new_type: New type of the brick.
+        Arguments:
+            new_type (str): New type of the brick.
 
-        Return the current object.
+        Returns:
+            Self
+
+        Exceptions:
+            ValueError: if the new type does not exist
         """
 
         # Make sure this brick exists

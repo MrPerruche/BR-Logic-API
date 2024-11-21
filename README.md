@@ -6,4 +6,4 @@
 - NumPy 2.1+
 - (Optional) Logging (Any version)
 
-Note: do this file.
+Todo: do this file.

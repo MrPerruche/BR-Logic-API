@@ -1,6 +1,7 @@
 from .bricks_utils import _add_mk
 from copy import deepcopy
-from typing import Any
+from typing import Any, Final
+from types import SimpleNamespace
 
 """
     '.InputAxis': 'str8',
@@ -28,6 +29,9 @@ property_types14: dict[str, str] = {
     'bInvertTankSteering': 'bool',
     'BrakeStrength': 'float',
     'bReturnToZero': 'bool',
+    'BrakeInputChannel.InputAxis': 'str8',
+    'BrakeInputChannel.SourceBricks': 'list[brick_id]',
+    'BrakeInputChannel.Value': 'float',
     'BrickColor': 'list[4*uint8]',
     'BrickMaterial': 'str8',
     'BrickPattern': 'str8',
@@ -53,6 +57,12 @@ property_types14: dict[str, str] = {
     'InputChannel.InputAxis': 'str8',
     'InputChannel.SourceBricks': 'list[brick_id]',
     'InputChannel.Value': 'float',
+    'InputChannelA.InputAxis': 'str8',
+    'InputChannelA.SourceBricks': 'list[brick_id]',
+    'InputChannelA.Value': 'float',
+    'InputChannelB.InputAxis': 'str8',
+    'InputChannelB.SourceBricks': 'list[brick_id]',
+    'InputChannelB.Value': 'float',
     'InputScale': 'float',
     'LightConeAngle': 'float',
     'LightDirection': 'str8',
@@ -83,6 +93,9 @@ property_types14: dict[str, str] = {
     'SpawnScale': 'float',
     'SpeedFactor': 'float',
     'SteeringAngle': 'float',
+    'SteeringInputChannel.InputAxis': 'str8',
+    'SteeringInputChannel.SourceBricks': 'list[brick_id]',
+    'SteeringInputChannel.Value': 'float',
     'SteeringSpeed': 'float',
     'SuspensionDamping': 'float',
     'SuspensionLength': 'float',
@@ -106,6 +119,87 @@ property_types14: dict[str, str] = {
 } # {'brick_id', 'list[4*uint8]', 'uint8', 'strany', 'list[brick_id]', 'str8', 'float', 'list[3*float]', 'list[6*uint2]', 'list[3*uint8]', 'bool'}
 
 
+class BrickSelector14:
+
+    CATEGORIES: Final[dict[str, tuple[str, ...]]] = {
+        'Actuators': ('Brick.Actuator',),
+        'Aviation': ('Brick.Wing', 'Brick.Propeller', 'Brick.RotorBlade', 'Brick.BladeHolder', 'Brick.Rotor',
+                     'Brick.Flap', 'Brick.FuelConsumer.Turbine'),
+        'Cameras': ('Brick.Camera', 'Brick.Camera.TargetMarker'),
+        'Couplings': ('Brick.Couplings',),
+        'Cylinders': ('Brick.Cylinder', 'Brick.Cone', 'Brick.Hemisphere'),
+        'Decoration': ('Brick.Handle', 'Brick.Grille', 'Brick.Antenna', 'Brick.Bumper', 'Brick.Door',
+                       'Brick.SteeringWheel', 'Brick.Scalable.Image', 'Brick.Scalable.Text'),
+        'DefaultBricks': ('Brick',),
+        'Fire': ('Brick.Detonator', 'Brick.Pump', 'Brick.Tank', 'Brick.Scalable.Float'),
+        'Guns': ('Brick.Barrel', 'Brick.FuelConsumer.Flamethrower', 'Brick.Gun.Launcher', 'Brick.Gun'),
+        'InputAndOutput': ('Brick.Sensor', 'Brick.Switch', 'Brick.Math', 'Brick.Scalable.Display'),
+        'Lights': ('Brick.Scalable.Light',),
+        'Player': ('Brick.RC', 'Brick.Seat', 'Brick.SteeringWheel'),
+        'Ramps': ('Brick.Ramp',),
+        'Redirectors': ('Brick.Redirector',),
+        'Rods': ('Brick.Rod',),
+        'Scalables': ('Brick.Scalable',),
+        'Thrusters': ('Brick.FuelConsumer.Thruster', 'Brick.Tank'),
+        'Uncategorized': ('BRCI.Uncategorized',)
+    }
+
+    SUBSETS: Final[dict[str, tuple[str, ...]]] = {
+        'BRCI.Uncategorized': [],
+        'Brick': [],
+        'Brick.Actuator': [],
+        'Brick.Antenna': [],
+        'Brick.Barrel': [],
+        'Brick.BladeHolder': [],
+        'Brick.Bumper': [],
+        'Brick.Camera': [],
+        'Brick.Camera.TargetMarker': [],
+        'Brick.Cone': [],
+        'Brick.Couplings': [],
+        'Brick.Cylinder': [],
+        'Brick.Detonator': [],
+        'Brick.Door': [],
+        'Brick.Flap': [],
+        'Brick.FuelConsumer.Flamethrower': [],
+        'Brick.FuelConsumer.Thruster': [],
+        'Brick.FuelConsumer.Turbine': [],
+        'Brick.Grille': [],
+        'Brick.Gun': [],
+        'Brick.Gun.Launcher': [],
+        'Brick.Handle': [],
+        'Brick.Hemisphere': [],
+        'Brick.Math': [],
+        'Brick.Propeller': [],
+        'Brick.Pump': [],
+        'Brick.RC': [],
+        'Brick.Ramp': [],
+        'Brick.Redirector': [],
+        'Brick.Rod': [],
+        'Brick.Rotor': [],
+        'Brick.RotorBlade': [],
+        'Brick.Scalable': [],
+        'Brick.Scalable.Display': [],
+        'Brick.Scalable.Float': [],
+        'Brick.Scalable.Image': [],
+        'Brick.Scalable.Light': [],
+        'Brick.Scalable.Text': [],
+        'Brick.Seat': [],
+        'Brick.Sensor': [],
+        'Brick.SteeringWheel': [],
+        'Brick.Switch': [],
+        'Brick.Tank': [],
+        'Brick.Wing': [],
+    }
+
+    def get_category(self, category: str):
+        pass
+
+
+    def get_subset(self, subset: str, get_sub_subsets: bool = False):
+        pass
+
+
+
 # Assign all properties
 def default_properties14() -> dict[str, Any]:
     return deepcopy({'BrickColor': [0, 0, 127, 255], 'BrickPattern': 'Default', 'BrickMaterial': 'Plastic'})
@@ -113,6 +207,8 @@ def default_properties14() -> dict[str, Any]:
 
 # Initialize bricks for later
 bricks14: dict[str, Any] = {}
+
+# _add_mk(BrickSelector14.SUBSETS['Brick.Seat'], ())
 
 
 # ACTUATORS. Last update: 1.7.4
