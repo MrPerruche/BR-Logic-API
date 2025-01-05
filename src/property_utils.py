@@ -218,13 +218,14 @@ def convert_len(value: float | int | list[float | int], old_unit: float | int, n
 
     # Need to import it each time to update it
 
-    if type(value) in (list, tuple, set, frozenset) and {type(v) for v in value} - {float, int} != set():
+    if (type(value) in (list, tuple, set, frozenset)) and ({type(v) for v in value} - {float, int} != set()):
+        # raise TypeError("Value must be a float, int or list of floats and ints.")
+        pass
 
-        raise TypeError("Value must be a float, int or list of floats and ints.")
+    elif not type(value) in (float, int):
 
-    elif type(value) not in (float, int):
-
-        raise TypeError("Value must be a float, int or list of floats and ints.")
+        # raise TypeError("Value must be a float, int or list of floats and ints.")
+        pass
 
     if not type(old_unit) in (float, int):
 
@@ -592,3 +593,4 @@ def BrickInput14(prop_name: str, input_type: str, value: float | int = 1.0, sour
     """
 
     return brick_input14(prop_name, input_type, value, source_bricks)
+

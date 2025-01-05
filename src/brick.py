@@ -260,6 +260,10 @@ class Brick14:
         self.set_type(brick_type)
 
 
+    def __repr__(self):
+        return f'Brick14({self._brick_type!r}, {self.name!r}, {self.position!r}, {self.rotation!r}, {self.properties!r})'
+
+
     def get_type(self) -> str:
 
         """
@@ -323,7 +327,7 @@ class Brick14:
             Self
 
         Exceptions:
-            ValueError: if the new type does not exist
+            NameError: if the new type does not exist
         """
 
         # Make sure this brick exists
@@ -341,13 +345,45 @@ class Brick14:
             self._brick_type = new_type
 
         else:
-            raise ValueError(f"Brick type {new_type!r} does not exist")
+            raise NameError(f"Brick type {new_type!r} does not exist")
 
         return Self
-
-
 
 
 Brick = TypeVar('Brick', bound=Brick14)
 
 
+def help14(brick: str | Iterable[str] | None, is_rst: bool = False) -> None:
+
+    if brick is None or brick == '*':
+        for b in sorted(bricks14.keys()):
+            help14(b, is_rst)
+        return
+
+    if type(brick) != str:
+        print(type(brick).__name__, brick)
+        # Line below raises error for brick being None
+        for b in brick:
+            help14(b, is_rst)
+        return
+
+    if brick not in bricks14.keys():
+        raise NameError(f"Unknown brick type {brick!r}")
+
+
+    result: str = ''
+
+    if is_rst:
+
+        result += f'**{brick}**\n\n'
+
+        # result += '.. code-block:: none\n\n'
+        for prop, val in bricks14[brick].items():
+            result += f'- {prop}: ``{val!r}``\n'
+
+    else:
+
+        result += f'Brick type: {brick}\n'
+        result += f'Properties: {{\n{',\n'.join([f'    {prop!r}: {val!r}' for prop, val in bricks14[brick].items()])}\n}}'
+
+    print(result)

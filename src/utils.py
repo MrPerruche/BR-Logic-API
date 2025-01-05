@@ -30,7 +30,7 @@ except ImportError:
 # -------------------- DATA --------------------
 
 # Version
-BRCI_VERSION: str = "4.17.0"
+BRCI_VERSION: str = "4.18.0"
 # Paths
 BRCI_CWD: str = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 _LOCALAPPDATA: str = os.getenv("LOCALAPPDATA")

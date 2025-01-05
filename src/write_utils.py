@@ -438,7 +438,7 @@ def get_utf8(bin_value: bytes | bytearray) -> str:
     Returns:
         str: String
     """
-
+    print(bin_value)
     return bin_value.decode('ascii')
 
 
@@ -525,7 +525,7 @@ def extract_str16(ba: bytearray) -> str:
         str: Extracted string
     """
 
-    str_len: int = get_unsigned_int(extract_bytes(ba, 2))
+    str_len: int = get_signed_int(extract_bytes(ba, 2))
     if str_len < 0:
         return get_utf16(extract_bytes(ba, -str_len))
     else:

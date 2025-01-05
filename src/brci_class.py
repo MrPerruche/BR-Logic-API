@@ -7,9 +7,11 @@ from .write_utils import *
 from .write_utils import _convert_brick_names_to_id, _convert_brick_types, _get_property_data, _get_prop_bin
 from datetime import datetime
 from zlib import compress as zlib_compress
+from typing import Callable
 # import os.path -> from .utils
 # from typing import Self -> from .brick
 # from typing import Final -> from .utils
+from time import perf_counter  # TODO TEMPORARY FOR TEST
 
 VISIBILITY_PUBLIC: Final[int] = 0
 VISIBILITY_FRIENDS: Final[int] = 1
@@ -593,12 +595,13 @@ class Creation14:
 
 
 
-    def read_creation(self, file_path: str) -> Self:
+    def read_creation(self, file_name: str = 'Vehicle.brv', brick_name: str | int = 0) -> Self:
         """
         Will read the .brv (vehicle) file, and append it to the creation's bricks.
 
         Arguments:
-            file_path (str): Path of the .brv file
+            file_name (str): Path of the .brv file
+            brick_name: (str | int): If int, will set names as index + brick_name. Else, will replace {index} placeholder.
 
         Returns:
             Self
@@ -611,14 +614,26 @@ class Creation14:
 
         if not settings['wip_features']: raise NotImplementedError()
 
+        file_path = os.path.join(self.project_dir, self.project_name, file_name)
+
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Invalid path {file_path}")
 
         with open(file_path, 'rb') as f:
             file = bytearray(f.read())
+
+        start_t = perf_counter()  # TODO TEMPORARY FOR TEST
         
         # That's all we need from the with statement.
         # Now we need to write, in reverse.
+
+        # Find name of bricks
+        if type(brick_name) == int:
+            name_func = lambda index: index + brick_name
+        else:
+            name_func = lambda index: brick_name.replace("{index}", str(index))
+
+        # -------------------- PART 1: HEADER INFO -------------------- #
 
         file_version: int = get_unsigned_int(extract_bytes(file, 1))
 
@@ -634,14 +649,21 @@ class Creation14:
         # And the next two, the number of unique properties:
         num_properties: int = get_unsigned_int(extract_bytes(file, 2))
 
-        file_brick_types: set = set()
-        for _ in range(num_brick_types):
-            file_brick_types.add(extract_str8(file))
         logwrap("debug", "Creation14::read_creation || Buffer -> Header info completed...")
 
 
+        # -------------------- PART 2: BRICK TYPES  -------------------- #
 
-        # -------------------- PART 2: PROPERTIES -------------------- #
+        brick_types: set = set()
+        for _ in range(num_brick_types):
+            brick_types.add(extract_str8(file))
+        brick_types_tuple = tuple(brick_types)
+
+        logwrap("debug", "Creation14::read_creation || Buffer -> Brick types completed...")
+
+
+
+        # -------------------- PART 3: PROPERTIES -------------------- #
 
         properties: dict[str, list[Any]] = {}
 
@@ -655,20 +677,23 @@ class Creation14:
             bin_values: list[bytearray] = []
             values: list[any] = []
 
-            first_len: int = get_unsigned_int(extract_bytes(bin_properties, 2))
+            if num_values > 1:
+                first_len: int = get_unsigned_int(extract_bytes(file, 2))
 
-            if first_len == 0:
-                for _ in range(num_values):
-                    bin_values.append(extract_bytes(bin_properties, get_unsigned_int(extract_bytes(file, 2))))
+                if first_len == 0:
+                    for _ in range(num_values):
+                        bin_values.append(extract_bytes(bin_properties, get_unsigned_int(extract_bytes(file, 2))))
+
+                else: # if num_values > 1:
+                    bin_values = [extract_bytes(bin_properties, first_len) for _ in range(num_values-1)]
 
             else:
-                if num_values > 1:
-                    bin_values = [extract_bytes(bin_properties, first_len)]
-
-                else:
-                    bin_values = [bin_properties]
+                bin_values = [bin_properties]
 
             for bin_value in bin_values:
+
+                print(prop_name, bin_value)
+                print(first_len)
 
                 match property_types14[prop_name]:
 
@@ -679,7 +704,7 @@ class Creation14:
                         values.append(bin_value == b'\x01')
 
                     case 'brick_id':
-                        values.append(get_unsigned_int(bin_value[-2:]))
+                        values.append(name_func(get_unsigned_int(bin_value[-2:])-1))
 
                     case 'float':
                         values.append(get_sp_float(bin_value))
@@ -697,7 +722,7 @@ class Creation14:
                         values.append([(get_unsigned_int(bin_value) >> i) & 0x3 for i in range(12, -1, -2)])
 
                     case 'list[brick_id]':
-                        values.append([get_unsigned_int(extract_bytes(bin_value, 2)) for _ in range(get_unsigned_int(extract_bytes(bin_value, 2)))])
+                        values.append([name_func(get_unsigned_int(extract_bytes(bin_value, 2))-1) for _ in range(get_unsigned_int(extract_bytes(bin_value, 2)))])
 
                     case 'str8':
                         values.append(extract_str8(bin_value))
@@ -709,6 +734,62 @@ class Creation14:
                         values.append(get_unsigned_int(bin_value))
 
             properties.update({prop_name: values})
+
+        logwrap("debug", "Creation14::read_creation || Buffer -> Properties completed...")
+
+        # -------------------- PART 4: BRICKS -------------------- #
+
+
+        # Setting up stuff
+        property_type_names: tuple[str, ...] = tuple(properties.keys())
+
+        for brick in range(num_bricks):
+
+            # Get type of the brick
+            brick_type: str = brick_types_tuple[get_unsigned_int(extract_bytes(file, 2))]
+
+            # PROPERTIES
+            # Get number of properties
+            num_brick_properties: int = get_unsigned_int(extract_bytes(file, 1))
+
+            # Get properties
+            brick_properties: dict = {}
+            for _ in range(num_brick_properties):
+                # Retrieve IDs
+                prop_id: int = get_unsigned_int(extract_bytes(file, 2))
+                val_id: int = get_unsigned_int(extract_bytes(file, 2))
+
+                # Obtain value from IDs and append them to already collected properties
+                brick_properties.update({
+                    property_type_names[prop_id]: property_type_names[prop_id][val_id]
+                })
+
+            # Get position and rotation
+            position: list[float] = [get_sp_float(extract_bytes(file, 4)) for _ in range(3)]
+            rotation: list[float] = [get_sp_float(extract_bytes(file, 4)) for _ in range(3)]
+            rotation = [rotation[2], rotation[0], rotation[1]]  # (Y Z X) -> (X Y Z)
+
+            # Done. Add the brick to the list
+            self.add_brick(brick_type=brick_type,
+                           name=name_func(brick),
+                           position=position,
+                           rotation=rotation,
+                           properties=brick_properties
+            )
+
+        # -------------------- PART 5: FOOTER --------------------
+
+        seat_id: int = get_unsigned_int(extract_bytes(file, 2))
+
+        if seat_id != 0:
+            self.seat = name_func(seat_id-1)
+
+        end_t = perf_counter()    # TODO TEMPORARY FOR TEST
+        print(f"time (reading excluded): {end_t - start_t:,.6f}")  # TODO TEMPORARY FOR TEST
+
+
+
+        return self
 
 
 
